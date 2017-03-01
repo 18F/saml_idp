@@ -45,8 +45,7 @@ module SamlIdp
 
       def validate(idp_cert_fingerprint, soft = true, options = {})
         base64_cert = find_base64_cert(options)
-        cert_text   = Base64.decode64(base64_cert)
-        cert        = OpenSSL::X509::Certificate.new(cert_text)
+        cert        = OpenSSL::X509::Certificate.new(base64_cert)
 
         # check cert matches registered idp cert
         fingerprint = fingerprint_cert(cert, options)
@@ -179,8 +178,7 @@ module SamlIdp
       end
 
       def verify_signature(base64_cert, sig_alg, signature, canon_string, soft)
-        cert_text           = Base64.decode64(base64_cert)
-        cert                = OpenSSL::X509::Certificate.new(cert_text)
+        cert                = OpenSSL::X509::Certificate.new(base64_cert)
         signature_algorithm = algorithm(sig_alg)
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
