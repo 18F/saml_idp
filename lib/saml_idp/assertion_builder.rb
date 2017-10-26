@@ -40,7 +40,7 @@ module SamlIdp
           assertion.Issuer issuer_uri
           sign assertion
           assertion.Subject do |subject|
-            subject.NameID name_id, Format: name_id_format[:name]
+            subject.NameID name_id, Format: name_id_format.fetch(:name)
             subject.SubjectConfirmation Method: Saml::XML::Namespaces::Methods::BEARER do |confirmation|
               confirmation.SubjectConfirmationData "", InResponseTo: saml_request_id,
                 NotOnOrAfter: not_on_or_after_subject,
@@ -117,7 +117,7 @@ module SamlIdp
     private :name_id
 
     def name_id_getter
-      getter = name_id_format[:getter]
+      getter = name_id_format.fetch(:getter)
       if getter.respond_to? :call
         getter
       else
@@ -127,7 +127,19 @@ module SamlIdp
     private :name_id_getter
 
     def name_id_format
-      @name_id_format ||= NameIdFormatter.new(config.name_id.formats).chosen
+      return @name_id_format if @name_id_format
+
+      if principal.respond_to?(:name_id_format)
+        format = principal.public_send(:name_id_format)
+      else
+        format = NameIdFormatter.new(config.name_id.formats).chosen
+      end
+
+      unless format.include?(:name) && format.include?(:getter)
+        raise ArgumentError.new('name_id_format must include :name and :getter')
+      end
+
+      @name_id_format = format
     end
     private :name_id_format
 

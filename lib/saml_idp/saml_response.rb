@@ -63,7 +63,8 @@ module SamlIdp
     private :response_builder
 
     def assertion_builder
-      @assertion_builder ||= AssertionBuilder.new reference_id,
+      @assertion_builder ||= AssertionBuilder.new(
+        reference_id,
         issuer_uri,
         principal,
         audience_uri,
@@ -73,6 +74,7 @@ module SamlIdp
         authn_context_classref,
         expiry,
         encryption_opts
+      )
     end
     private :assertion_builder
   end
