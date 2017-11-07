@@ -44,4 +44,3 @@ RSpec.configure do |config|
 end
 
 Capybara.default_host = "https://app.example.com"
-

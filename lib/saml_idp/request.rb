@@ -78,7 +78,7 @@ module SamlIdp
     end
 
     def log(msg)
-      if Rails && Rails.logger
+      if defined?(::Rails) && Rails.logger
         Rails.logger.info msg
       else
         puts msg

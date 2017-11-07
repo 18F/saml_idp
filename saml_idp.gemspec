@@ -44,7 +44,6 @@ section of the README.
   s.add_dependency('activesupport')
   s.add_dependency('uuid')
   s.add_dependency('builder')
-  s.add_dependency('httparty')
   s.add_dependency('nokogiri', '>= 1.6.2')
 
   s.add_development_dependency "rake"

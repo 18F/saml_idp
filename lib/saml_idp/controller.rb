@@ -20,7 +20,13 @@ module SamlIdp
 
     def validate_saml_request(raw_saml_request = params[:SAMLRequest])
       decode_request(raw_saml_request)
-      head :forbidden unless valid_saml_request?
+      unless valid_saml_request?
+        if Rails::VERSION::MAJOR >= 4
+          head :forbidden
+        else
+          render nothing: true, status: :forbidden
+        end
+      end
     end
 
     def decode_request(raw_saml_request)
@@ -38,6 +44,7 @@ module SamlIdp
       opt_issuer_uri = opts[:issuer_uri] || issuer_uri
       my_authn_context_classref = opts[:authn_context_classref] || authn_context_classref
       expiry = opts[:expiry] || 60*60
+      session_expiry = opts[:session_expiry]
       encryption_opts = opts[:encryption] || nil
 
       SamlResponse.new(
@@ -52,7 +59,8 @@ module SamlIdp
         my_authn_context_classref,
         saml_request.name_id_format,
         expiry,
-        encryption_opts
+        encryption_opts,
+        session_expiry
       ).build
     end
 

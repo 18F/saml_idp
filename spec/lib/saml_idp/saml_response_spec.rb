@@ -17,6 +17,7 @@ module SamlIdp
     }
     let(:name_id_format) { 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress' }
     let(:expiry) { 3 * 60 * 60 }
+    let(:session_expiry) { 24 * 60 * 60 }
     let (:encryption_opts) do
       {
         cert: Default::X509_CERTIFICATE,
@@ -35,7 +36,8 @@ module SamlIdp
                                   authn_context_classref,
                                   name_id_format,
                                   expiry,
-                                  encryption_opts
+                                  encryption_opts,
+                                  session_expiry
                                  )
     }
 
@@ -49,9 +51,19 @@ module SamlIdp
                                   algorithm,
                                   authn_context_classref,
                                   name_id_format,
-                                  expiry
+                                  expiry,
+                                  nil,
+                                  session_expiry
                                  )
     }
+
+    before do
+      Timecop.freeze(Time.local(1990, "jan", 1))
+    end
+
+    after do
+      Timecop.return
+    end
 
     it "has a valid build" do
       expect(subject.build).to be_present
@@ -66,6 +78,29 @@ module SamlIdp
       saml_resp = OneLogin::RubySaml::Response.new(encoded_xml, settings: resp_settings)
       saml_resp.soft = false
       expect(saml_resp.is_valid?).to eq(true)
+    end
+
+    it "sets session expiration" do
+      saml_resp = OneLogin::RubySaml::Response.new(subject.build)
+      expect(saml_resp.session_expires_at).to eq(Time.local(1990, "jan", 2).iso8601)
+    end
+
+    context "session expiration is set to 0" do
+      let(:session_expiry) { 0 }
+
+      it "builds a valid request" do
+        resp_settings = saml_settings(saml_acs_url)
+        resp_settings.issuer = audience_uri
+        saml_resp = OneLogin::RubySaml::Response.new(subject.build, settings: resp_settings)
+        expect(saml_resp.is_valid?).to eq(true)
+      end
+
+      it "doesn't set a session expiration" do
+        resp_settings = saml_settings(saml_acs_url)
+        resp_settings.issuer = audience_uri
+        saml_resp = OneLogin::RubySaml::Response.new(subject.build, settings: resp_settings)
+        expect(saml_resp.session_expires_at).to eq(nil)
+      end
     end
   end
 end

@@ -42,9 +42,7 @@ match '/saml/logout' => 'saml_idp#logout', via: [:get, :post, :delete]
 Create a controller that looks like this, customize to your own situation:
 
 ``` ruby
-class SamlIdpController
-  include SamlIdp::IdpController
-
+class SamlIdpController < SamlIdp::IdpController
   def idp_authenticate(email, password) # not using params intentionally
     user = User.by_email(email).first
     user && user.valid_password?(password) ? user : nil
@@ -94,9 +92,10 @@ CERT
   # config.organization_name = "Your Organization"
   # config.organization_url = "http://example.com"
   # config.base_saml_location = "#{base}/saml"
-  # config.reference_id_generator                   # Default: -> { UUID.generate }
+  # config.reference_id_generator                                 # Default: -> { UUID.generate }
   # config.attribute_service_location = "#{base}/saml/attributes"
   # config.single_service_post_location = "#{base}/saml/auth"
+  # config.session_expiry = 86400                                 # Default: 0 which means never
 
   # Principal (e.g. User) is passed in when you `encode_response`
   #

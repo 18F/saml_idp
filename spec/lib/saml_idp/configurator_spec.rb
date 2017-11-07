@@ -11,9 +11,11 @@ module SamlIdp
     it { is_expected.to respond_to :attribute_service_location }
     it { is_expected.to respond_to :single_service_post_location }
     it { is_expected.to respond_to :single_logout_service_post_location }
+    it { is_expected.to respond_to :single_logout_service_redirect_location }
     it { is_expected.to respond_to :name_id }
     it { is_expected.to respond_to :attributes }
     it { is_expected.to respond_to :service_provider }
+    it { is_expected.to respond_to :session_expiry }
 
     it "has a valid x509_certificate" do
       expect(subject.x509_certificate).to eq(Default::X509_CERTIFICATE)
@@ -38,6 +40,10 @@ module SamlIdp
 
     it "can call service provider metadata persister" do
       expect(subject.service_provider.metadata_persister).to respond_to :call
+    end
+
+    it 'has a valid session_expiry' do
+      expect(subject.session_expiry).to eq(0)
     end
   end
 end
