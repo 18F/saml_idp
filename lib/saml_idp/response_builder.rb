@@ -45,6 +45,10 @@ module SamlIdp
     end
     private :encode
 
+    def signed_and_encoded
+      @signed_and_encoded ||= Base64.strict_encode64(signed)
+    end
+
     def build
       builder = Builder::XmlMarkup.new
       builder.tag! "samlp:Response",

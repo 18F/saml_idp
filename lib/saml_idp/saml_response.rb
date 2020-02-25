@@ -60,7 +60,7 @@ module SamlIdp
     end
 
     def signed
-      @signed ||= response_builder.signed
+      @signed ||= response_builder.signed_and_encoded
     end
 
     def signed_assertion
