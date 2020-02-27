@@ -11,11 +11,11 @@ module SamlIdp
     attr_accessor :saml_request_id
     attr_accessor :saml_acs_url
     attr_accessor :algorithm
-    attr_accessor :secret_key
-    attr_accessor :x509_certificate
-    attr_accessor :cloudhsm_key_label
     attr_accessor :authn_context_classref
     attr_accessor :name_id_format
+    attr_accessor :x509_certificate
+    attr_accessor :secret_key
+    attr_accessor :cloudhsm_key_label
     attr_accessor :expiry
     attr_accessor :encryption_opts
 
