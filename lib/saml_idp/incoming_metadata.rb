@@ -60,17 +60,6 @@ module SamlIdp
     end
     hashable :encryption_certificate
 
-    def single_logout_services
-      xpath(
-        "//md:SPSSODescriptor/md:SingleLogoutService",
-        md: metadata_namespace
-      ).reduce({}) do |hash, el|
-        hash[el["Binding"].to_s.split(":").last] = el["Location"]
-        hash
-      end
-    end
-    hashable :single_logout_services
-
     def name_id_formats
       xpath(
         "//md:SPSSODescriptor/md:NameIDFormat",
