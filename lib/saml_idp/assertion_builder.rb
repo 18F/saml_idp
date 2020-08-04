@@ -91,7 +91,14 @@ module SamlIdp
           end
           assertion.AuthnStatement AuthnInstant: now_iso, SessionIndex: reference_string do |statement|
             statement.AuthnContext do |context|
-              context.AuthnContextClassRef authn_context_classref
+              case authn_context_classref
+              when Array
+                authn_context_classref.each do |classref|
+                  context.AuthnContextClassRef classref
+                end
+              else
+                context.AuthnContextClassRef authn_context_classref
+              end
             end
           end
         end

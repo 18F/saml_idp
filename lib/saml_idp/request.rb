@@ -71,6 +71,38 @@ module SamlIdp
       end
     end
 
+    def requested_authn_contexts
+      if authn_request? && authn_context_nodes.length > 0
+        authn_context_nodes.map(&:content)
+      else
+        nil
+      end
+    end
+
+    def requested_ial_authn_context
+      return nil if requested_authn_contexts.nil?
+
+      ial_prefix = 'http://idmanagement.gov/ns/assurance/ial'.freeze
+      loa_prefix = 'http://idmanagement.gov/ns/assurance/loa'.freeze
+      requested_authn_contexts.each do |classref|
+        return classref if (%r{#{ial_prefix}}.match?(classref) ||
+                            %r{#{loa_prefix}}.match?(classref))
+      end
+
+      nil
+    end
+
+    def requested_aal_authn_context
+      return nil if requested_authn_contexts.nil?
+
+      aal_prefix = 'http://idmanagement.gov/ns/assurance/aal'.freeze
+      requested_authn_contexts.each do |classref|
+        return classref if %r{#{aal_prefix}}.match?(classref)
+      end
+
+      nil
+    end
+
     def acs_url
       service_provider.acs_url ||
         authn_request["AssertionConsumerServiceURL"].to_s
@@ -174,6 +206,13 @@ module SamlIdp
         saml: assertion).first
     end
     private :authn_context_node
+
+    def authn_context_nodes
+      @_authn_context_nodes ||= xpath("//samlp:AuthnRequest/samlp:RequestedAuthnContext/saml:AuthnContextClassRef",
+        samlp: samlp,
+        saml: assertion)
+    end
+    private :authn_context_nodes
 
     def authn_request
       @_authn_request ||= xpath("//samlp:AuthnRequest", samlp: samlp).first
