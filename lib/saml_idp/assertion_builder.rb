@@ -93,9 +93,9 @@ module SamlIdp
             statement.AuthnContext do |context|
               case authn_context_classref
               when Array
-                authn_context_classref.each do |classref|
-                  context.AuthnContextClassRef classref
-                end
+                context.AuthnContextClassRef(
+                  authn_context_classref.select { |classref| %r{/ial/}.match? classref }.first
+                )
               else
                 context.AuthnContextClassRef authn_context_classref
               end
