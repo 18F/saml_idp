@@ -22,7 +22,6 @@ module SamlIdp
       Rails.logger.info "validate_saml_request"
 
       decode_request(raw_saml_request)
-      Rails.logger.info "#{"*" * 80}\nSAML Request:\n#{self.saml_request.inspect}\nDone with SAML Request\n#{"*" * 80}"
 
       head :forbidden unless valid_saml_request?
     end
