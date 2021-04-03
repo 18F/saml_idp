@@ -19,7 +19,7 @@ module SamlIdp
     protected
 
     def validate_saml_request(raw_saml_request = params[:SAMLRequest])
-      Rails.logger.info "validate_saml_request"
+      log "validate_saml_request"
 
       decode_request(raw_saml_request)
 
@@ -127,6 +127,14 @@ module SamlIdp
 
     def default_algorithm
       OpenSSL::Digest::SHA256
+    end
+
+    def log(msg, level: :debug)
+      if Rails && Rails.logger
+        Rails.logger.send(level, msg)
+      else
+        puts msg
+      end
     end
   end
 end
