@@ -21,23 +21,16 @@ module SamlIdp
     def valid_signature?(doc, require_signature = false, options = {})
       if require_signature || should_validate_signature?
         Array(certs).any? do |cert|
-          fingerprint = fingerprint_cert(cert)
-          fingerprint && doc.valid_signature?(fingerprint, options.merge(cert: cert))
+          doc.valid_signature?(fingerprint_cert(cert), options.merge(cert: cert))
         end
       else
         true
       end
     end
 
-    # @see SamlIdp::XMLSecurity::SignedDocument#find_base64_cert
-    # @param [String] string representation of an X509 cert
+    # @param [OpenSSL::X509::Certificate] ssl_cert
     def fingerprint_cert(ssl_cert)
-      return nil unless ssl_cert.present?
-      OpenSSL::Digest::SHA256.new(
-        OpenSSL::X509::Certificate.new(Base64.decode64(ssl_cert)).to_der
-      ).hexdigest
-    rescue OpenSSL::X509::CertificateError
-      nil
+      OpenSSL::Digest::SHA256.new(ssl_cert.to_der).hexdigest
     end
 
     def should_validate_signature?
