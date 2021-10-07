@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # Specify the Ruby version you desire here
-      - image: cimg/ruby:2.7.3
+      - image: cimg/ruby:2.7-browsers
         environment:
           RAILS_ENV: test
           CC_TEST_REPORTER_ID: a989576c2cf27161879ca9dfc4044dcd07ffc9d4b03827f6d464fcfff6c896a0
@@ -21,7 +21,6 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo apt install sqlite3
             gem install bundler
             bundle install --jobs=4 --retry=3 --path vendor/bundle
       - run:
