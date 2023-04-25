@@ -89,7 +89,7 @@ module SamlIdp
       def fingerprint_cert(cert, options)
         digest_algorithm = signature_algorithm(options)
         return nil unless digest_algorithm
-        digest_algorithm.hexdigest(cert.to_der)
+        digest_algorithm&.hexdigest(cert.to_der)
       end
 
       def fingerprint_cert_sha1(cert)
