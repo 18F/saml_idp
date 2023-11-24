@@ -32,67 +32,27 @@ module SamlIdp
       "<LogoutRequest ID='_some_response_id' Version='2.0' IssueInstant='2010-06-01T13:00:00Z' Destination='http://localhost:3000/saml/logout' xmlns='urn:oasis:names:tc:SAML:2.0:protocol'><Issuer xmlns='urn:oasis:names:tc:SAML:2.0:assertion'>http://example.com</Issuer><NameID xmlns='urn:oasis:names:tc:SAML:2.0:assertion' Format='urn:oasis:names:tc:SAML:2.0:nameid-format:persistent'>some_name_id</NameID><SessionIndex>abc123index</SessionIndex></LogoutRequest>"
     end
 
+    let(:options) { {} }
+    let(:deflated_request) { make_saml_request }
+    subject { described_class.from_deflated_request deflated_request, options }
+
     describe 'deflated request' do
-      let(:deflated_request) { Base64.encode64(Zlib::Deflate.deflate(raw_authn_request, 9)[2..-5]) }
-
-      subject { described_class.from_deflated_request deflated_request }
-
       it 'inflates' do
-        expect(subject.request_id).to eq('_af43d1a0-e111-0130-661a-3c0754403fdb')
+        expect(subject.issuer).to eq(saml_settings.issuer)
       end
 
-      it 'handles invalid SAML' do
-        req = described_class.from_deflated_request 'bang!'
-        expect(req.valid?).to eq(false)
-      end
-    end
-
-    describe 'authn request' do
-      subject { described_class.new raw_authn_request }
-
-      it 'has a valid request_id' do
-        expect(subject.request_id).to eq('_af43d1a0-e111-0130-661a-3c0754403fdb')
-      end
-
-      it 'has a valid acs_url' do
-        expect(subject.acs_url).to eq('http://localhost:3000/saml/consume')
-      end
-
-      it 'has a valid service_provider' do
-        expect(subject.service_provider).to be_a ServiceProvider
-      end
-
-      it 'has a valid service_provider' do
-        expect(subject.service_provider).to be_truthy
-      end
-
-      it 'has a valid issuer' do
-        expect(subject.issuer).to eq('localhost:3000')
-      end
-
-      it 'has a valid valid_signature' do
-        expect(subject.valid_signature?).to be_truthy
-      end
-
-      it "correctly indicates that it isn't signed" do
-        expect(subject.signed?).to be_falsey
-      end
-
-      context 'with signature in params' do
-        subject do
-          described_class.new(raw_authn_request, get_params: { Signature: 'abc' })
-        end
-
-        it 'correctly indicates that it is signed (even invalidly)' do
-          expect(subject.signed?).to be_truthy
+      describe 'invalid SAML' do
+        let(:deflated_request) { 'bang!' }
+        it 'does not set attributes' do
+          expect(subject.issuer).to be nil
         end
       end
 
-      context 'with an enveloped signature' do
-        subject { described_class.new raw_authn_enveloped_signature }
+      describe 'no request passed in' do
+        let(:deflated_request) { nil }
 
-        it 'correctly indicates that it is signed (even invalidly)' do
-          expect(subject.signed?).to be_truthy
+        it 'sets raw_xml to an empty string' do
+          expect(subject.raw_xml).to eq ''
         end
       end
 
@@ -127,35 +87,118 @@ module SamlIdp
           expect(subject.issuer).not_to eq('')
           expect(subject.issuer).to eq(nil)
         end
-      end
 
-      it 'defaults to force_authn = false' do
-        expect(subject.force_authn?).to be_falsey
-      end
+        it 'has a valid service_provider' do
+          expect(subject.service_provider).to be_a ServiceProvider
+        end
 
-      it 'properly parses ForceAuthn="true" if passed' do
-        authn_request = described_class.new raw_authn_forceauthn_present
+        it 'has a valid service_provider' do
+          expect(subject.service_provider.valid?).to be true
+        end
 
-        expect(authn_request.force_authn?).to be_truthy
-      end
+        it 'has a valid issuer' do
+          expect(subject.issuer).to eq(saml_settings.issuer)
+        end
 
-      it 'properly parses ForceAuthn="false" if passed' do
-        authn_request = described_class.new raw_authn_forceauthn_false
+        it 'has a valid valid_signature' do
+          expect(subject.valid_signature?).to be true
+        end
 
-        expect(authn_request.force_authn?).to be_falsey
-      end
+        it "correctly indicates that it isn't signed" do
+          expect(subject.signed?).to be false
+        end
 
-      describe 'unspecified name id format' do
-        subject { described_class.new raw_authn_unspecified_name_id_format }
+        context 'with signature in params' do
+          let(:deflated_request) { signed_auth_request(embed: false) }
+          let(:options) do
+            { get_params: signed_auth_request_options.with_indifferent_access }
+          end
 
-        it 'returns nil for name id format' do
-          expect(subject.name_id_format).to eq(nil)
+          it 'correctly indicates that it is signed (even invalidly)' do
+            expect(subject.signed?).to be true
+          end
+        end
+
+        context 'with an enveloped signature' do
+          let(:deflated_request) { signed_auth_request(embed: true) }
+
+          it 'correctly indicates that it is signed (even invalidly)' do
+            expect(subject.signed?).to be true
+          end
+        end
+
+        it 'should return acs_url for response_url' do
+          expect(subject.response_url).to eq(subject.acs_url)
+        end
+
+        it 'is a authn request' do
+          expect(subject.authn_request?).to eq(true)
+        end
+
+        it 'fetches internal request' do
+          expect(subject.request['ID']).to eq(subject.request_id)
+        end
+
+        it 'has a valid name id format' do
+          expect(subject.name_id_format).to eq(saml_settings.name_identifier_format)
+        end
+
+        it 'has a valid requested authn context comparison' do
+          expect(subject.requested_authn_context_comparison).to eq(saml_settings.authn_context_comparison)
+        end
+
+        it 'has a valid authn context' do
+          expect(subject.requested_authn_context).to eq(saml_settings.authn_context)
+        end
+
+        context 'empty issuer' do
+          let(:deflated_request) { make_invalid_saml_request}
+
+          it 'does not permit empty issuer' do
+            expect(subject.issuer).not_to eq('')
+            expect(subject.issuer).to eq(nil)
+          end
+        end
+
+        describe 'force_authn?' do
+          describe 'it is not set' do
+            it 'defaults to false' do
+              expect(subject.force_authn?).to be false
+            end
+          end
+
+          describe 'ForceAuthn is set' do
+            let(:force_authn) { true }
+            let(:deflated_request) { make_saml_request_with_options({force_authn: force_authn}) }
+
+            it 'returns true' do
+              expect(subject.force_authn?).to be true
+            end
+
+            describe 'it is set to false' do
+              let(:force_authn) { false }
+
+              it 'returns false' do
+                expect(subject.force_authn?).to be false
+              end
+            end
+          end
+        end
+
+        describe 'unspecified name id format' do
+          let(:deflated_request) { make_saml_request_with_options({name_identifier_format: nil}) }
+
+          it 'returns nil for name id format' do
+            expect(subject.name_id_format).to eq(nil)
+          end
         end
       end
     end
 
     describe 'logout request' do
-      subject { described_class.new raw_logout_request }
+      let(:deflated_request) { make_saml_logout_request }
+
+      subject { described_class.from_deflated_request deflated_request }
 
       it 'has a valid request_id' do
         expect(subject.request_id).to eq('_some_response_id')
@@ -187,7 +230,9 @@ module SamlIdp
     end
 
     describe '#requested_aal_authn_context' do
-      subject { described_class.new raw_authn_request }
+      let(:authn_context_classref) { '' }
+      let(:deflated_request) { make_saml_request_with_options({authn_context: authn_context_classref}) }
+      subject { described_class.from_deflated_request deflated_request }
 
       context 'no aal context requested' do
         let(:authn_context_classref) { '' }
@@ -198,7 +243,7 @@ module SamlIdp
       end
 
       context 'context requested is default aal' do
-        let(:authn_context_classref) { build_authn_context_classref(default_aal) }
+        let(:authn_context_classref) { default_aal }
 
         it 'returns the aal uri' do
           expect(subject.requested_aal_authn_context).to eq(default_aal)
@@ -206,7 +251,7 @@ module SamlIdp
       end
 
       context 'only context requested is aal' do
-        let(:authn_context_classref) { build_authn_context_classref(aal) }
+        let(:authn_context_classref) { aal }
 
         it 'returns the aal uri' do
           expect(subject.requested_aal_authn_context).to eq(aal)
@@ -214,7 +259,7 @@ module SamlIdp
       end
 
       context 'multiple contexts requested including aal' do
-        let(:authn_context_classref) { build_authn_context_classref([ial, aal]) }
+        let(:authn_context_classref) { [ial, aal] }
 
         it 'returns the aal uri' do
           expect(subject.requested_aal_authn_context).to eq(aal)
@@ -223,7 +268,9 @@ module SamlIdp
     end
 
     describe '#requested_ial_authn_context' do
-      subject { described_class.new raw_authn_request }
+      let(:authn_context_classref) { '' }
+      let(:deflated_request) { make_saml_request_with_options({authn_context: authn_context_classref}) }
+      subject { described_class.from_deflated_request deflated_request }
 
       context 'no ial context requested' do
         let(:authn_context_classref) { '' }
@@ -234,7 +281,7 @@ module SamlIdp
       end
 
       context 'only context requested is ial' do
-        let(:authn_context_classref) { build_authn_context_classref(ial) }
+        let(:authn_context_classref) { ial }
 
         it 'returns the ial uri' do
           expect(subject.requested_ial_authn_context).to eq(ial)
@@ -242,7 +289,7 @@ module SamlIdp
       end
 
       context 'multiple contexts requested including ial' do
-        let(:authn_context_classref) { build_authn_context_classref([aal, ial]) }
+        let(:authn_context_classref) { [aal, ial] }
 
         it 'returns the ial uri' do
           expect(subject.requested_ial_authn_context).to eq(ial)
@@ -323,7 +370,7 @@ module SamlIdp
 
       context 'an invalid request' do
         describe 'a request with no issuer' do
-          let(:issuer) { nil }
+          let(:request_saml) { make_invalid_saml_request }
 
           it 'is not valid' do
             expect(subject.valid?).to eq(false)
@@ -337,8 +384,9 @@ module SamlIdp
 
         describe 'no authn_request OR logout_request tag' do
           let(:request_saml) do
-            "<saml:Issuer xmlns:saml='urn:oasis:names:tc:SAML:2.0:assertion'>localhost:3000</saml:Issuer><samlp:NameIDPolicy AllowCreate='true' Format='urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress' xmlns:samlp='urn:oasis:names:tc:SAML:2.0:protocol'/><samlp:RequestedAuthnContext Comparison='exact'>#{authn_context_classref}</samlp:RequestedAuthnContext>"
+            "<saml:Issuer xmlns:saml='urn:oasis:names:tc:SAML:2.0:assertion'>localhost:3000</saml:Issuer><samlp:NameIDPolicy AllowCreate='true' Format='urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress' xmlns:samlp='urn:oasis:names:tc:SAML:2.0:protocol'/><samlp:RequestedAuthnContext Comparison='exact'>http://idmanagement.gov/ns/assurance/aal/3</samlp:RequestedAuthnContext>"
           end
+          subject { described_class.new(request_saml, options) }
 
           it 'is not valid' do
             expect(subject.valid?).to eq false
@@ -351,12 +399,11 @@ module SamlIdp
         end
 
         describe 'both an authn_request AND logout_request tag' do
-          let(:logout_saml) do
-            "<LogoutRequest ID='_some_response_id' Version='2.0' IssueInstant='2010-06-01T13:00:00Z' Destination='http://localhost:3000/saml/logout' xmlns='urn:oasis:names:tc:SAML:2.0:protocol'>"
-          end
+          let(:request_saml) { make_saml_request }
+          let(:logout_saml) { "<LogoutRequest ID='_some_response_id' Version='2.0' IssueInstant='2010-06-01T13:00:00Z' Destination='http://localhost:3000/saml/logout' xmlns='urn:oasis:names:tc:SAML:2.0:protocol'>" }
 
-          let(:request_saml) do
-            logout_saml + raw_authn_request + '</LogoutRequest>'
+          before do
+            subject.raw_xml = logout_saml + subject.raw_xml + "</LogoutRequest>"
           end
 
           it 'is not valid' do
@@ -371,11 +418,7 @@ module SamlIdp
 
         describe 'there is no response url' do
           describe 'authn_request' do
-            let(:request_saml) do
-              raw_authn_request.gsub(
-                "AssertionConsumerServiceURL='http://localhost:3000/saml/consume'", ''
-              )
-            end
+            let(:request_saml) { make_saml_request_with_options({assertion_consumer_service_url: ''}) }
 
             it 'is not valid' do
               expect(subject.valid?).to eq false
@@ -388,8 +431,7 @@ module SamlIdp
           end
 
           describe 'logout_request' do
-            let(:request_saml) { raw_logout_request }
-
+            let(:request_saml) { make_saml_logout_request }
             before do
               subject.service_provider.assertion_consumer_logout_service_url = nil
             end
@@ -406,18 +448,129 @@ module SamlIdp
         end
 
         describe 'invalid signature' do
-          subject do
-            # the easiest way to "force" a signature check is to make it a logout request
-            described_class.new(raw_logout_request, get_params: { Signature: 'abc' })
+          let(:options) { { get_params: signed_auth_request_options.with_indifferent_access } }
+          let(:cert) { saml_settings.certificate }
+          let(:registered_cert) do
+            OpenSSL::X509::Certificate.new(
+              "-----BEGIN CERTIFICATE-----\n" +
+              cert  +
+              "\n-----END CERTIFICATE-----"
+            )
+          end
+          let(:expected_cert) { Base64.encode64(registered_cert.to_pem) }
+
+          let(:request_saml) { signed_auth_request_options["SAMLRequest"] }
+
+          before do
+            # force signature validation
+            subject.service_provider.validate_signature = true
+            subject.service_provider.certs = [registered_cert]
           end
 
-          it 'is not valid' do
-            expect(subject.valid?).to eq false
-          end
+          describe 'specific errors' do
+            describe 'invalid certificate' do
+              before do
+                expect(Base64).to receive(:decode64).with(expected_cert) { "invalid certificate" }
+              end
 
-          it 'adds an error to request object' do
-            subject.valid?
-            expect(subject.errors.include?(:invalid_signature)).to be true
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds an error to request object' do
+                subject.valid?
+                expect(subject.errors.include?(:invalid_certificate)).to be true
+              end
+            end
+
+            describe 'none of the service provider certs match the signed document' do
+              let(:registered_cert) { OpenSSL::X509::Certificate.new(cloudhsm_idp_x509_cert) }
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a key validation error to request object' do
+                subject.valid?
+                expect(subject.errors.include?(:key_validation_error)).to be true
+              end
+            end
+
+            describe 'service provider has no certificate registered' do
+              before { subject.service_provider.certs = [] }
+
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a no_cert_registered error to request object' do
+                subject.valid?
+                expect(subject.errors.include?(:no_cert_registered)).to be true
+              end
+            end
+
+            describe 'fingerprint mismatch' do
+              before do
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "Fingerprint mismatch")
+              end
+
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a fingerprint mismatch error' do
+                subject.valid?
+                expect(subject.errors.include?(:fingerprint_mismatch)).to be true
+              end
+            end
+
+            describe 'present but nil cert tag in request' do
+              # TODO: This could happen if a cert tag was present in the request document
+              # and the service_provider had a cert registered. should we
+              # refactor the code to ignore the certificate in the request document?
+              before do
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "Certificate element present in response (ds:X509Certificate) but evaluating to nil")
+              end
+
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a present_but_nil_cert error' do
+                subject.valid?
+                expect(subject.errors.include?(:present_but_nil)).to be true
+              end
+            end
+
+            describe 'cert is not a cert' do
+              # TODO: Not sure if this is possible based on our setup.
+              before do
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate")
+              end
+
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a not_base64_or_cert error' do
+                subject.valid?
+                expect(subject.errors.include?(:not_base64_or_cert)).to be true
+              end
+            end
+
+            describe 'digest mismatch' do
+              before do
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "Digest mismatch")
+              end
+
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a digest mismatch error' do
+                subject.valid?
+                expect(subject.errors.include?(:digest_mismatch)).to be true
+              end
+            end
           end
         end
       end

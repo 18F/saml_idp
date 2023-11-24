@@ -25,7 +25,12 @@ module SamlIdp
         doc.valid_signature?(fingerprint_cert(cert), options.merge(cert:))
       end
 
+      no_raising_errors = options[:soft].nil? ? true : options[:soft]
+
       if require_signature || should_validate_signature?
+        if certs.blank? && !no_raising_errors
+          raise SamlIdp::XMLSecurity::SignedDocument::ValidationError.new("No certificate registered")
+        end
         !!@matching_cert
       else
         true

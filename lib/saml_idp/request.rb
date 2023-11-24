@@ -156,10 +156,15 @@ module SamlIdp
         errors.push(:no_response_url)
       end
 
-      unless service_provider? && valid_signature?
-        log "Signature is invalid in #{raw_xml}"
-        # TODO: We should get more specific errors
-        errors.push(:invalid_signature)
+      if service_provider?
+        begin
+          unless valid_signature?
+            log "Signature is invalid in #{raw_xml}"
+            errors.push(:invalid_signature)
+          end
+        rescue SamlIdp::XMLSecurity::SignedDocument::ValidationError => e
+          errors.push(validation_error_dictionary[e.message])
+        end
       end
 
       errors.blank?
@@ -183,7 +188,7 @@ module SamlIdp
     def valid_signature?
       # Force signatures for logout requests because there is no other
       # protection against a cross-site DoS.
-      service_provider.valid_signature?(document, logout_request?, options)
+      service_provider.valid_signature?(document, logout_request?, options.merge(soft: false))
     end
 
     def service_provider?
@@ -279,5 +284,17 @@ module SamlIdp
       config.service_provider.finder
     end
     private :service_provider_finder
+
+    def validation_error_dictionary
+      {
+        "Invalid certificate": :invalid_certificate,
+        "Fingerprint mismatch": :fingerprint_mismatch,
+        "Certificate element present in response (ds:X509Certificate) but evaluating to nil": :present_but_nil,
+        "options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate": :not_base64_or_cert,
+        "Digest mismatch": :digest_mismatch,
+        "Key validation error": :key_validation_error,
+        "No certificate registered": :no_cert_registered
+      }.with_indifferent_access
+    end
   end
 end
