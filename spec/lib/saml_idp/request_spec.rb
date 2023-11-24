@@ -340,9 +340,9 @@ module SamlIdp
           let(:cert) { saml_settings.certificate }
           let(:registered_cert) do
             OpenSSL::X509::Certificate.new(
-              '-----BEGIN CERTIFICATE-----\n' +
+              "-----BEGIN CERTIFICATE-----\n" +
               cert  +
-              '\n-----END CERTIFICATE-----'
+              "\n-----END CERTIFICATE-----"
             )
           end
           let(:expected_cert) { Base64.encode64(registered_cert.to_pem) }
