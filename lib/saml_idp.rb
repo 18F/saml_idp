@@ -75,8 +75,9 @@ module Saml
       private :options_have_signature
 
       def valid_signature?(fingerprint, options = {})
+        soft_fail = options[:soft].nil? ? true : options[:soft]
         (signed? || options_have_signature(options)) &&
-          signed_document.validate(fingerprint, :soft, options)
+          signed_document.validate(fingerprint, soft_fail, options)
       end
 
       def signed_document
