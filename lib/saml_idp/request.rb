@@ -147,7 +147,8 @@ module SamlIdp
       end
 
       unless authn_request? || logout_request?
-        log "One and only one of authnrequest and logout request is required. authnrequest: #{authn_request?} logout_request: #{logout_request?} "
+        log 'One and only one of authnrequest and logout request is required. '
+          + "authnrequest: #{authn_request?} logout_request: #{logout_request?} "
         errors.push(:no_auth_or_logout_request)
       end
 
@@ -287,13 +288,13 @@ module SamlIdp
 
     def validation_error_dictionary
       {
-        "Invalid certificate": :invalid_certificate,
-        "Fingerprint mismatch": :fingerprint_mismatch,
-        "Certificate element present in response (ds:X509Certificate) but evaluating to nil": :present_but_nil,
-        "options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate": :not_base64_or_cert,
-        "Digest mismatch": :digest_mismatch,
-        "Key validation error": :key_validation_error,
-        "No certificate registered": :no_cert_registered
+        'Invalid certificate': :invalid_certificate,
+        'Fingerprint mismatch': :fingerprint_mismatch,
+        'Certificate element present in response (ds:X509Certificate) but evaluating to nil': :present_but_nil,
+        'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate': :not_base64_or_cert,
+        'Digest mismatch': :digest_mismatch,
+        'Key validation error': :key_validation_error,
+        'No certificate registered': :no_cert_registered,
       }.with_indifferent_access
     end
   end

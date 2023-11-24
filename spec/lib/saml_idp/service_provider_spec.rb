@@ -10,7 +10,7 @@ module SamlIdp
     it { is_expected.not_to be_valid }
 
     describe 'with attributes' do
-      let(:attributes) { { metadata_url: } }
+      let(:attributes) { { metadata_url: metadata_url } }
       let(:metadata_url) { 'http://localhost:3000/metadata' }
 
       it 'has a valid metadata_url' do
@@ -38,7 +38,10 @@ module SamlIdp
 
         describe 'the service provider has certs' do
           before { subject.certs = [cert] }
+<<<<<<< HEAD
 
+=======
+>>>>>>> e44b607 (Standardize quote marks)
           it 'returns true' do
             expect(subject.valid_signature?(doc)).to be true
           end
