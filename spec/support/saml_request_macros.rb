@@ -2,9 +2,9 @@ require 'saml_idp/logout_request_builder'
 
 module SamlRequestMacros
 
-  def make_saml_request(requested_saml_acs_url = "https://foo.example.com/saml/consume")
+  def make_saml_request(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
     auth_url = url(saml_settings(requested_saml_acs_url))
-    CGI.unescape(auth_url.split("=").last)
+    CGI.unescape(auth_url.split('=').last)
   end
 
   def url(saml_settings)
@@ -13,7 +13,7 @@ module SamlRequestMacros
   end
 
   def signed_auth_request(embed: true)
-    CGI.unescape(url(signed_saml_settings(embed: embed)).split("=").last)
+    CGI.unescape(url(signed_saml_settings(embed: embed)).split('=').last)
   end
 
   def signed_auth_request_options
@@ -24,7 +24,7 @@ module SamlRequestMacros
 
   def make_invalid_saml_request
     auth_url = url(invalid_saml_settings)
-    CGI.unescape(auth_url.split("=").last)
+    CGI.unescape(auth_url.split('=').last)
   end
 
   def make_saml_logout_request(requested_saml_logout_url = 'https://foo.example.com/saml/logout')
@@ -52,18 +52,18 @@ module SamlRequestMacros
     end
 
     auth_url = url(settings)
-    CGI.unescape(auth_url.split("=").last)
+    CGI.unescape(auth_url.split('=').last)
   end
 
-  def saml_settings(requested_saml_acs_url = "https://foo.example.com/saml/consume")
+  def saml_settings(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
     @saml_settings ||= begin
       settings = OneLogin::RubySaml::Settings.new
       settings.assertion_consumer_service_url = requested_saml_acs_url
-      settings.authn_context = "urn:oasis:names:tc:SAML:2.0:ac:classes:Password"
-      settings.authn_context_comparison = "exact"
-      settings.issuer = "http://example.com/issuer"
-      settings.idp_sso_target_url = "http://idp.com/saml/idp"
-      settings.idp_slo_target_url = "http://idp.com/saml/idp-slo"
+      settings.authn_context = 'urn:oasis:names:tc:SAML:2.0:ac:classes:Password'
+      settings.authn_context_comparison = 'exact'
+      settings.issuer = 'http://example.com/issuer'
+      settings.idp_sso_target_url = 'http://idp.com/saml/idp'
+      settings.idp_slo_target_url = 'http://idp.com/saml/idp-slo'
       settings.idp_cert_fingerprint = SamlIdp::Default::FINGERPRINT
       settings.name_identifier_format = SamlIdp::Default::NAME_ID_FORMAT
       settings.certificate = SamlIdp::Default::X509_CERTIFICATE
@@ -79,7 +79,7 @@ module SamlRequestMacros
   end
 
   def signed_saml_settings(embed: true)
-    settings = saml_settings("https://foo.example.com/saml/consume")
+    settings = saml_settings('https://foo.example.com/saml/consume')
     settings.security = {
       embed_sign: embed,
       authn_requests_signed: true,
@@ -98,7 +98,7 @@ module SamlRequestMacros
 
   def print_pretty_xml(xml_string)
     doc = REXML::Document.new xml_string
-    outbuf = ""
+    outbuf = ''
     doc.write(outbuf, 1)
     puts outbuf
   end

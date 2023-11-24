@@ -49,7 +49,7 @@ module SamlIdp
           expect(subject.valid_signature?).to be true
         end
 
-        it "correctly indicates that it isn't signed" do
+        it 'correctly indicates that it is not signed' do
           expect(subject.signed?).to be false
         end
 
@@ -291,7 +291,7 @@ module SamlIdp
           let(:logout_saml) { "<LogoutRequest ID='_some_response_id' Version='2.0' IssueInstant='2010-06-01T13:00:00Z' Destination='http://localhost:3000/saml/logout' xmlns='urn:oasis:names:tc:SAML:2.0:protocol'>" }
 
           before do
-            subject.raw_xml = logout_saml + subject.raw_xml + "</LogoutRequest>"
+            subject.raw_xml = logout_saml + subject.raw_xml + '</LogoutRequest>'
           end
 
           it 'is not valid' do
@@ -340,14 +340,14 @@ module SamlIdp
           let(:cert) { saml_settings.certificate }
           let(:registered_cert) do
             OpenSSL::X509::Certificate.new(
-              "-----BEGIN CERTIFICATE-----\n" +
+              '-----BEGIN CERTIFICATE-----\n' +
               cert  +
-              "\n-----END CERTIFICATE-----"
+              '\n-----END CERTIFICATE-----'
             )
           end
           let(:expected_cert) { Base64.encode64(registered_cert.to_pem) }
 
-          let(:request_saml) { signed_auth_request_options["SAMLRequest"] }
+          let(:request_saml) { signed_auth_request_options['SAMLRequest'] }
 
           before do
             # force signature validation
@@ -358,7 +358,7 @@ module SamlIdp
           describe 'specific errors' do
             describe 'invalid certificate' do
               before do
-                expect(Base64).to receive(:decode64).with(expected_cert) { "invalid certificate" }
+                expect(Base64).to receive(:decode64).with(expected_cert) { 'invalid certificate' }
               end
 
               it 'is not valid' do
@@ -398,7 +398,9 @@ module SamlIdp
 
             describe 'fingerprint mismatch' do
               before do
-                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "Fingerprint mismatch")
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'Fingerprint mismatch'
+                )
               end
 
               it 'is not valid' do
@@ -416,7 +418,10 @@ module SamlIdp
               # and the service_provider had a cert registered. should we
               # refactor the code to ignore the certificate in the request document?
               before do
-                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "Certificate element present in response (ds:X509Certificate) but evaluating to nil")
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,
+                  'Certificate element present in response (ds:X509Certificate) but evaluating to nil'
+                )
               end
 
               it 'is not valid' do
@@ -432,7 +437,10 @@ module SamlIdp
             describe 'cert is not a cert' do
               # TODO: Not sure if this is possible based on our setup.
               before do
-                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate")
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,
+                  'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate'
+                )
               end
 
               it 'is not valid' do
@@ -447,7 +455,10 @@ module SamlIdp
 
             describe 'digest mismatch' do
               before do
-                allow(subject.service_provider).to receive(:valid_signature?).and_raise(SamlIdp::XMLSecurity::SignedDocument::ValidationError, "Digest mismatch")
+                allow(subject.service_provider).to receive(:valid_signature?).and_raise(
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,
+                  'Digest mismatch'
+                )
               end
 
               it 'is not valid' do
