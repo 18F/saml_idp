@@ -12,8 +12,8 @@ module SamlRequestMacros
     auth_request.create(saml_settings)
   end
 
-  def signed_auth_request(embed: true)
-    CGI.unescape(url(signed_saml_settings(embed: embed)).split('=').last)
+  def signed_auth_request(embed: true, algo: "sha256")
+    CGI.unescape(url(signed_saml_settings(embed: embed, algo: algo)).split('=').last)
   end
 
   def signed_auth_request_options
@@ -78,14 +78,14 @@ module SamlRequestMacros
     end
   end
 
-  def signed_saml_settings(embed: true)
+  def signed_saml_settings(embed: true, algo: 'sha256')
     settings = saml_settings('https://foo.example.com/saml/consume')
     settings.security = {
       embed_sign: embed,
       authn_requests_signed: true,
       want_assertions_signed: true,
-      digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
-      signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256'
+      digest_method: "http://www.w3.org/2001/04/xmlenc#sha256",
+      signature_method: "http://www.w3.org/2001/04/xmldsig-more##{algo}"
     }
     settings
   end

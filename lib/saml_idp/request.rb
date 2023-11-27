@@ -268,6 +268,5 @@ module SamlIdp
       config.service_provider.finder
     end
     private :service_provider_finder
-
   end
 end

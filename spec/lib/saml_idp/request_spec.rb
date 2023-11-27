@@ -479,6 +479,20 @@ module SamlIdp
                 expect(subject.errors.include?(:digest_mismatch)).to be true
               end
             end
+
+            describe 'request not using SHA256 hashing algorithm' do
+              let(:options) { {} }
+              let(:request_saml) { signed_auth_request(algo: "sha1") }
+
+              it 'is not valid' do
+                expect(subject.valid?).to eq false
+              end
+
+              it 'adds a require_sha256 error' do
+                subject.valid?
+                expect(subject.errors.include?(:require_sha256)).to be true
+              end
+            end
           end
         end
       end

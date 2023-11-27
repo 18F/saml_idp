@@ -132,7 +132,8 @@ module SamlIdp
         else
           raise ValidationError.new(
             'Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]',
-            :cert_missing)
+            :cert_missing
+          )
         end
       end
 
@@ -204,7 +205,6 @@ module SamlIdp
               "Digest mismatch",
               :digest_mismatch
             ))
-
           end
         end
 
@@ -220,6 +220,13 @@ module SamlIdp
         cert_text           = Base64.decode64(base64_cert)
         cert                = OpenSSL::X509::Certificate.new(cert_text)
         signature_algorithm = algorithm(sig_alg)
+
+        if signature_algorithm != OpenSSL::Digest::SHA256 && !soft
+         raise ValidationError.new(
+            'All signatures must use RSA SHA-256',
+            :require_sha256
+          )
+        end
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
           return soft ? false : (raise ValidationError.new(
