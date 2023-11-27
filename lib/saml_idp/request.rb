@@ -132,7 +132,7 @@ module SamlIdp
 
       unless service_provider?
         log "Unable to find service provider for issuer #{issuer}"
-        errors.push(:issuer_missing_or_invald)
+        errors.push(:issuer_missing_or_invalid)
       end
 
       if authn_request? && logout_request?
@@ -142,7 +142,6 @@ module SamlIdp
 
       unless authn_request? || logout_request?
         log 'One and only one of authnrequest and logout request is required. '
-          + "authnrequest: #{authn_request?} logout_request: #{logout_request?} "
         errors.push(:no_auth_or_logout_request)
       end
 
