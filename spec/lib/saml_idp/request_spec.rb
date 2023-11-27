@@ -511,7 +511,10 @@ module SamlIdp
             describe 'fingerprint mismatch' do
               before do
                 allow(subject.service_provider).to receive(:valid_signature?).and_raise(
-                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'Fingerprint mismatch'
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
+                    'Fingerprint mismatch',
+                    :fingerprint_mismatch
+                  )
                 )
               end
 
@@ -531,8 +534,10 @@ module SamlIdp
               # refactor the code to ignore the certificate in the request document?
               before do
                 allow(subject.service_provider).to receive(:valid_signature?).and_raise(
-                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,
-                  'Certificate element present in response (ds:X509Certificate) but evaluating to nil'
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
+                    'Certificate element present in response (ds:X509Certificate) but evaluating to nil',
+                    :present_but_nil
+                  )
                 )
               end
 
@@ -550,8 +555,10 @@ module SamlIdp
               # TODO: Not sure if this is possible based on our setup.
               before do
                 allow(subject.service_provider).to receive(:valid_signature?).and_raise(
-                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,
-                  'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate'
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
+                    'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate',
+                    :not_base64_or_cert
+                  )
                 )
               end
 
@@ -568,8 +575,10 @@ module SamlIdp
             describe 'digest mismatch' do
               before do
                 allow(subject.service_provider).to receive(:valid_signature?).and_raise(
-                  SamlIdp::XMLSecurity::SignedDocument::ValidationError,
-                  'Digest mismatch'
+                  SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
+                    'Digest mismatch',
+                    :digest_mismatch
+                  )
                 )
               end
 
