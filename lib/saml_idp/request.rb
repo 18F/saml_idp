@@ -158,7 +158,7 @@ module SamlIdp
             errors.push(:invalid_signature)
           end
         rescue SamlIdp::XMLSecurity::SignedDocument::ValidationError => e
-          errors.push(validation_error_dictionary[e.message])
+          errors.push(e.error_code)
         end
       end
 
@@ -269,16 +269,5 @@ module SamlIdp
     end
     private :service_provider_finder
 
-    def validation_error_dictionary
-      {
-        'Invalid certificate': :invalid_certificate,
-        'Fingerprint mismatch': :fingerprint_mismatch,
-        'Certificate element present in response (ds:X509Certificate) but evaluating to nil': :present_but_nil,
-        'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate': :not_base64_or_cert,
-        'Digest mismatch': :digest_mismatch,
-        'Key validation error': :key_validation_error,
-        'No certificate registered': :no_cert_registered,
-      }.with_indifferent_access
-    end
   end
 end

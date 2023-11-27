@@ -30,7 +30,8 @@ module SamlIdp
       if require_signature || should_validate_signature?
         if certs.blank? && !no_raising_errors
           raise SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
-            'No certificate registered'
+            'No certificate registered',
+            :no_cert_registered
           )
         end
         !!@matching_cert
