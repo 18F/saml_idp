@@ -45,6 +45,7 @@ module SamlIdp
       DSIG = "http://www.w3.org/2000/09/xmldsig#"
 
       attr_accessor :signed_element_id
+      attr_accessor :raise_request_errors
 
       def initialize(response)
         super(response)
@@ -52,6 +53,8 @@ module SamlIdp
       end
 
       def validate(idp_cert_fingerprint, soft = true, options = {})
+        @raise_request_errors = options[:raise_request_errors]
+
         log 'Validate the fingerprint'
         base64_cert = find_base64_cert(options)
         cert_text   = Base64.decode64(base64_cert)
@@ -132,8 +135,7 @@ module SamlIdp
         else
           raise ValidationError.new(
             'Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]',
-            :cert_missing
-          )
+            :cert_missing)
         end
       end
 
@@ -201,10 +203,13 @@ module SamlIdp
           digest_value                  = Base64.decode64(REXML::XPath.first(ref, "//ds:DigestValue", sig_namespace_hash).text)
 
           unless digests_match?(hash, digest_value)
-            return soft ? false : (raise ValidationError.new(
-              "Digest mismatch",
-              :digest_mismatch
-            ))
+            if @raise_request_errors || !soft
+              raise ValidationError.new(
+                "Digest mismatch",
+                :digest_mismatch
+              )
+            end
+            return false
           end
         end
 
@@ -221,10 +226,10 @@ module SamlIdp
         cert                = OpenSSL::X509::Certificate.new(cert_text)
         signature_algorithm = algorithm(sig_alg)
 
-        if signature_algorithm != OpenSSL::Digest::SHA256 && !soft
-         raise ValidationError.new(
-            'All signatures must use RSA SHA-256',
-            :require_sha256
+        if signature_algorithm != OpenSSL::Digest::SHA256 && @raise_request_errors
+          raise ValidationError.new(
+              'All signatures must use RSA SHA-256',
+              :require_sha256
           )
         end
 

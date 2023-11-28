@@ -152,11 +152,9 @@ module SamlIdp
 
       if service_provider?
         begin
-          unless valid_signature?
-            log "Signature is invalid in #{raw_xml}"
-            errors.push(:invalid_signature)
-          end
+          valid_signature?
         rescue SamlIdp::XMLSecurity::SignedDocument::ValidationError => e
+          log e.message
           errors.push(e.error_code)
         end
       end
@@ -171,7 +169,7 @@ module SamlIdp
     def valid_signature?
       # Force signatures for logout requests because there is no other
       # protection against a cross-site DoS.
-      service_provider.valid_signature?(document, logout_request?, options.merge(soft: false))
+      service_provider.valid_signature?(document, logout_request?, options)
     end
 
     def service_provider?
