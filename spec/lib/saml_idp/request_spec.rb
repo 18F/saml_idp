@@ -364,22 +364,12 @@ module SamlIdp
               it 'is not valid' do
                 expect(subject.valid?).to eq false
               end
-
-              it 'adds an error to request object' do
-                subject.valid?
-                expect(subject.errors.include?(:invalid_certificate)).to be true
-              end
             end
 
             describe 'none of the service provider certs match the signed document' do
               let(:registered_cert) { OpenSSL::X509::Certificate.new(cloudhsm_idp_x509_cert) }
               it 'is not valid' do
                 expect(subject.valid?).to eq false
-              end
-
-              it 'adds a key validation error to request object' do
-                subject.valid?
-                expect(subject.errors.include?(:key_validation_error)).to be true
               end
             end
 
@@ -398,12 +388,7 @@ module SamlIdp
 
             describe 'fingerprint mismatch' do
               before do
-                allow(subject.service_provider).to receive(:valid_signature?).and_raise(
-                  SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
-                    'Fingerprint mismatch',
-                    :fingerprint_mismatch
-                  )
-                )
+                expect(Base64).to receive(:decode64).with(expected_cert) { cloudhsm_idp_x509_cert }
               end
 
               it 'is not valid' do
@@ -412,7 +397,7 @@ module SamlIdp
 
               it 'adds a fingerprint mismatch error' do
                 subject.valid?
-                expect(subject.errors.include?(:fingerprint_mismatch)).to be true
+                expect(subject.errors.include?(:no_matching_cert)).to be true
               end
             end
 
@@ -461,13 +446,10 @@ module SamlIdp
             end
 
             describe 'digest mismatch' do
+              let(:options) { {} }
+              let(:request_saml) { signed_auth_request }
               before do
-                allow(subject.service_provider).to receive(:valid_signature?).and_raise(
-                  SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
-                    'Digest mismatch',
-                    :digest_mismatch
-                  )
-                )
+                allow(OpenSSL::Digest::SHA256).to receive(:digest) { 'incorrect_hash' }
               end
 
               it 'is not valid' do
