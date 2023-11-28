@@ -38,10 +38,6 @@ module SamlIdp
 
         describe 'the service provider has certs' do
           before { subject.certs = [cert] }
-<<<<<<< HEAD
-
-=======
->>>>>>> e44b607 (Standardize quote marks)
           it 'returns true' do
             expect(subject.valid_signature?(doc)).to be true
           end
@@ -52,16 +48,22 @@ module SamlIdp
         before { subject.validate_signature = true }
 
         describe 'a cert is not present in the document' do
+          let(:raise_request_errors) { nil }
           let(:raw_xml) do
             SamlIdp::Request.from_deflated_request(
               signed_auth_request_options['SAMLRequest']
             ).raw_xml
           end
-          let(:options) { { get_params: signed_auth_request_options }.with_indifferent_access }
+          let(:options) do
+            {
+              get_params: signed_auth_request_options,
+              raise_request_errors: raise_request_errors
+            }.with_indifferent_access
+          end
 
           describe 'the service provider has no certs' do
-            it 'returns false' do
-              expect(subject.valid_signature?(doc, true, options)).to be false
+            it 'raises an error' do
+              expect { subject.valid_signature?(doc, true, options) }.to raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'No cert')
             end
           end
 
@@ -76,17 +78,18 @@ module SamlIdp
 
             describe 'one invalid cert' do
               before { subject.certs = [invalid_cert] }
-
-              it 'returns false' do
-                expect(subject.valid_signature?(doc, true, options)).to be false
+              it 'raises an error' do
+                expect { subject.valid_signature?(doc, true, options) }.to raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'No matching cert')
               end
             end
 
             describe 'multiple certs' do
               before { subject.certs = [invalid_cert, cert] }
 
-              it 'returns true' do
-                expect(subject.valid_signature?(doc, true, options)).to be true
+              describe "one is valid" do
+                it 'returns true' do
+                  expect(subject.valid_signature?(doc, true, options)).to be true
+                end
               end
             end
           end
@@ -100,14 +103,8 @@ module SamlIdp
           end
 
           describe 'the service provider has no certs' do
-            it 'returns false' do
-              expect(subject.valid_signature?(doc, true)).to be false
-            end
-
-            describe 'the requirement is passed through the method' do
-              it 'returns false' do
-                expect(subject.valid_signature?(doc, true)).to be false
-              end
+            it 'raises an error' do
+              expect { subject.valid_signature?(doc, true, options) }.to raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'No cert')
             end
           end
 
@@ -123,8 +120,8 @@ module SamlIdp
             describe 'one invalid cert' do
               before { subject.certs = [invalid_cert] }
 
-              it 'returns false' do
-                expect(subject.valid_signature?(doc, true)).to be false
+              it 'raises an error' do
+                expect { subject.valid_signature?(doc, true, options) }.to raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'No matching cert')
               end
             end
 
@@ -149,13 +146,8 @@ module SamlIdp
               describe 'the valid cert is not registered in the idp' do
                 before { subject.certs = [other_cert, invalid_cert] }
 
-                it 'returns false' do
-                  expect(subject.valid_signature?(doc, true)).to be false
-                end
-
-                it 'matches the right cert' do
-                  subject.valid_signature?(doc)
-                  expect(subject.matching_cert).to be_nil
+                it 'raises an error' do
+                  expect { subject.valid_signature?(doc, true, options) }.to raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,  'No matching cert')
                 end
               end
             end

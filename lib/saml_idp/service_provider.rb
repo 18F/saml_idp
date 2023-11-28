@@ -21,23 +21,33 @@ module SamlIdp
     end
 
     def valid_signature?(doc, require_signature = false, options = {})
-      @matching_cert = Array(certs).find do |cert|
-        doc.valid_signature?(fingerprint_cert(cert), options.merge(cert:))
+      return true unless require_signature || should_validate_signature?
+
+      if cert_array.empty?
+        raise SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
+          'No cert',
+          :no_cert_registered
+        )
       end
 
-      no_raising_errors = options[:soft].nil? ? true : options[:soft]
-
-      if require_signature || should_validate_signature?
-        if certs.blank? && !no_raising_errors
-          raise SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
-            'No certificate registered',
-            :no_cert_registered
+      @matching_cert = cert_array.find do |cert|
+        doc.valid_signature?(fingerprint_cert(cert), options.merge(
+          {
+            cert: cert,
+            # we only want to raise request errors, not individual certificate errors
+            raise_request_errors: true}
           )
-        end
-        !!@matching_cert
-      else
-        true
+        )
       end
+
+      if @matching_cert.nil?
+        # if no ValidationErrors, but no matching certs, the request was signed with an
+        # unregistered certificate
+        raise SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(
+          'No matching cert',
+          :no_matching_cert)
+      end
+      true
     end
 
     # @param [OpenSSL::X509::Certificate] ssl_cert
@@ -90,5 +100,11 @@ module SamlIdp
       metadata_url.present? ? Faraday.get(metadata_url).body : ''
     end
     private :request_metadata
+
+    private
+
+    def cert_array
+      Array(certs)
+    end
   end
 end
