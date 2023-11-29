@@ -8,6 +8,9 @@ module SecurityHelpers
     end
   end
 
+  # TODO: go back and name these methods and files in semantically meaningful ways.
+  # and/or update and use the SamlRequestMacros to give tests more control over
+  # values being passed in
   def response_document
     @response_document ||= File.read(File.join(File.dirname(__FILE__), 'responses', 'response1.xml.base64'))
   end

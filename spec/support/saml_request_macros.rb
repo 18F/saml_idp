@@ -2,16 +2,29 @@ require 'saml_idp/logout_request_builder'
 
 module SamlRequestMacros
 
-  def make_saml_request(requested_saml_acs_url = "https://foo.example.com/saml/consume")
-    auth_request = OneLogin::RubySaml::Authrequest.new
-    auth_url = auth_request.create(saml_settings(requested_saml_acs_url))
-    CGI.unescape(auth_url.split("=").last)
+  def make_saml_request(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
+    auth_url = url(saml_settings(requested_saml_acs_url))
+    CGI.unescape(auth_url.split('=').last)
   end
 
-  def make_invalid_saml_request(requested_saml_acs_url = "https://foo.example.com/saml/consume")
+  def url(saml_settings)
     auth_request = OneLogin::RubySaml::Authrequest.new
-    auth_url = auth_request.create(invalid_saml_settings)
-    CGI.unescape(auth_url.split("=").last)
+    auth_request.create(saml_settings)
+  end
+
+  def signed_auth_request(embed: true, algo: "sha256")
+    CGI.unescape(url(signed_saml_settings(embed: embed, algo: algo)).split('=').last)
+  end
+
+  def signed_auth_request_options
+    signed_auth_request_options ||=
+      uri = URI(url(signed_saml_settings(embed: false)))
+      Rack::Utils.parse_nested_query uri.query
+  end
+
+  def make_invalid_saml_request
+    auth_url = url(invalid_saml_settings)
+    CGI.unescape(auth_url.split('=').last)
   end
 
   def make_saml_logout_request(requested_saml_logout_url = 'https://foo.example.com/saml/logout')
@@ -32,26 +45,52 @@ module SamlRequestMacros
     OneLogin::RubySaml::Logoutrequest.new.create(settings)
   end
 
-  def saml_settings(saml_acs_url = "https://foo.example.com/saml/consume")
-    settings = OneLogin::RubySaml::Settings.new
-    settings.assertion_consumer_service_url = saml_acs_url
-    settings.issuer = "http://example.com/issuer"
-    settings.idp_sso_target_url = "http://idp.com/saml/idp"
-    settings.idp_slo_target_url = "http://idp.com/saml/idp-slo"
-    settings.idp_cert_fingerprint = SamlIdp::Default::FINGERPRINT
-    settings.name_identifier_format = SamlIdp::Default::NAME_ID_FORMAT
-    settings.certificate = SamlIdp::Default::X509_CERTIFICATE
-    settings.private_key = SamlIdp::Default::SECRET_KEY
+  def make_saml_request_with_options(options)
+    settings = saml_settings
+    options.each do |prop_name, prop_value|
+      settings.send("#{prop_name}=",prop_value)
+    end
+
+    auth_url = url(settings)
+    CGI.unescape(auth_url.split('=').last)
+  end
+
+  def saml_settings(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
+    @saml_settings ||= begin
+      settings = OneLogin::RubySaml::Settings.new
+      settings.assertion_consumer_service_url = requested_saml_acs_url
+      settings.authn_context = 'urn:oasis:names:tc:SAML:2.0:ac:classes:Password'
+      settings.authn_context_comparison = 'exact'
+      settings.issuer = 'http://example.com/issuer'
+      settings.idp_sso_target_url = 'http://idp.com/saml/idp'
+      settings.idp_slo_target_url = 'http://idp.com/saml/idp-slo'
+      settings.idp_cert_fingerprint = SamlIdp::Default::FINGERPRINT
+      settings.name_identifier_format = SamlIdp::Default::NAME_ID_FORMAT
+      settings.certificate = SamlIdp::Default::X509_CERTIFICATE
+      settings.private_key = SamlIdp::Default::SECRET_KEY
+      settings.security = {
+        embed_sign: false,
+        logout_requests_signed: true,
+        digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
+        signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256'
+      }
+      settings
+    end
+  end
+
+  def signed_saml_settings(embed: true, algo: 'sha256')
+    settings = saml_settings('https://foo.example.com/saml/consume')
     settings.security = {
-      embed_sign: false,
-      logout_requests_signed: true,
-      digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
-      signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256'
+      embed_sign: embed,
+      authn_requests_signed: true,
+      want_assertions_signed: true,
+      digest_method: "http://www.w3.org/2001/04/xmlenc#sha256",
+      signature_method: "http://www.w3.org/2001/04/xmldsig-more##{algo}"
     }
     settings
   end
 
-  def invalid_saml_settings(saml_acs_url = "https://foo.example.com/saml/consume")
+  def invalid_saml_settings
     settings = saml_settings.dup
     settings.issuer = ''
     settings
@@ -59,7 +98,7 @@ module SamlRequestMacros
 
   def print_pretty_xml(xml_string)
     doc = REXML::Document.new xml_string
-    outbuf = ""
+    outbuf = ''
     doc.write(outbuf, 1)
     puts outbuf
   end

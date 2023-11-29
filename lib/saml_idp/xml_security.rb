@@ -32,11 +32,20 @@ require "digest/sha2"
 module SamlIdp
   module XMLSecurity
     class SignedDocument < REXML::Document
-      ValidationError = Class.new(StandardError)
+      class ValidationError < StandardError
+        attr_reader :error_code
+
+        def initialize(msg=nil, error_code=nil)
+          @error_code = error_code
+          super(msg)
+        end
+      end
+
       C14N = "http://www.w3.org/2001/10/xml-exc-c14n#"
       DSIG = "http://www.w3.org/2000/09/xmldsig#"
 
       attr_accessor :signed_element_id
+      attr_accessor :raise_request_errors
 
       def initialize(response)
         super(response)
@@ -44,6 +53,8 @@ module SamlIdp
       end
 
       def validate(idp_cert_fingerprint, soft = true, options = {})
+        @raise_request_errors = options[:raise_request_errors]
+
         log 'Validate the fingerprint'
         base64_cert = find_base64_cert(options)
         cert_text   = Base64.decode64(base64_cert)
@@ -51,7 +62,10 @@ module SamlIdp
           begin
             OpenSSL::X509::Certificate.new(cert_text)
           rescue OpenSSL::X509::CertificateError => e
-            return soft ? false : (raise ValidationError.new("Invalid certificate"))
+            return soft ? false : (raise ValidationError.new(
+              'Invalid certificate',
+              :invalid_certificate
+            ))
           end
 
         # check cert matches registered idp cert
@@ -60,7 +74,10 @@ module SamlIdp
         plain_idp_cert_fingerprint = idp_cert_fingerprint.gsub(/[^a-zA-Z0-9]/,"").downcase
 
         if fingerprint != plain_idp_cert_fingerprint && sha1_fingerprint != plain_idp_cert_fingerprint
-          return soft ? false : (raise ValidationError.new("Fingerprint mismatch"))
+          return soft ? false : (raise ValidationError.new(
+            'Fingerprint mismatch',
+            :fingerprint_mismatch
+          ))
         end
 
         validate_doc(base64_cert, soft, options)
@@ -100,17 +117,25 @@ module SamlIdp
         if cert_element
           return cert_element.text unless cert_element.text.blank?
 
-          raise ValidationError.new("Certificate element present in response (ds:X509Certificate) but evaluating to nil")
+          raise ValidationError.new(
+            "Certificate element present in response (ds:X509Certificate) but evaluating to nil",
+            :present_but_nil
+          )
         elsif options[:cert]
           if options[:cert].is_a?(String)
             options[:cert]
           elsif options[:cert].is_a?(OpenSSL::X509::Certificate)
             Base64.encode64(options[:cert].to_pem)
           else
-            raise ValidationError.new("options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate")
+            raise ValidationError.new(
+              'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate',
+              :not_base64_or_cert
+            )
           end
         else
-          raise ValidationError.new("Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]")
+          raise ValidationError.new(
+            'Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]',
+            :cert_missing)
         end
       end
 
@@ -178,7 +203,13 @@ module SamlIdp
           digest_value                  = Base64.decode64(REXML::XPath.first(ref, "//ds:DigestValue", sig_namespace_hash).text)
 
           unless digests_match?(hash, digest_value)
-            return soft ? false : (raise ValidationError.new("Digest mismatch"))
+            if @raise_request_errors || !soft
+              raise ValidationError.new(
+                "Digest mismatch",
+                :digest_mismatch
+              )
+            end
+            return false
           end
         end
 
@@ -195,8 +226,18 @@ module SamlIdp
         cert                = OpenSSL::X509::Certificate.new(cert_text)
         signature_algorithm = algorithm(sig_alg)
 
+        if signature_algorithm != OpenSSL::Digest::SHA256 && @raise_request_errors
+          raise ValidationError.new(
+              'All signatures must use RSA SHA-256',
+              :require_sha256
+          )
+        end
+
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
-          return soft ? false : (raise ValidationError.new("Key validation error"))
+          return soft ? false : (raise ValidationError.new(
+            'Key validation error',
+            :key_validation_error
+          ))
         end
 
         return true

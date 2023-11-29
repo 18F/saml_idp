@@ -41,10 +41,26 @@ module SamlIdp
           )
         end
 
+        describe 'when raising request errors' do
+          it 'raises require SHA256 error' do
+            response = Base64.decode64(response_document)
+            response.sub!('<ds:DigestValue>pJQ7MS/ek4KRRWGmv/H43ReHYMs=</ds:DigestValue>',
+                          '<ds:DigestValue>b9xsAXLsynugg3Wc1CI3kpWku+0=</ds:DigestValue>')
+            document = XMLSecurity::SignedDocument.new(response)
+            base64cert = document.elements['//ds:X509Certificate'].text
+
+            document.raise_request_errors = true
+            expect { document.validate_doc(base64cert, false, {raise_request_errors: true}) }.to(
+              raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError, 'All signatures must use RSA SHA-256')
+            )
+          end
+        end
+
         it 'raises Key validation error' do
           response = Base64.decode64(response_document)
           response.sub!('<ds:DigestValue>pJQ7MS/ek4KRRWGmv/H43ReHYMs=</ds:DigestValue>',
                         '<ds:DigestValue>b9xsAXLsynugg3Wc1CI3kpWku+0=</ds:DigestValue>')
+          response.gsub!('<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>', '<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha256"/>')
           document = XMLSecurity::SignedDocument.new(response)
           base64cert = document.elements['//ds:X509Certificate'].text
           expect { document.validate_doc(base64cert, false) }.to(
