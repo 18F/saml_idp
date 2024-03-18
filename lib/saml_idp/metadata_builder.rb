@@ -30,7 +30,7 @@ module SamlIdp
           entityID: entity_id do |entity|
             sign entity
 
-            entity.IDPSSODescriptor protocolSupportEnumeration: protocol_enumeration do |descriptor|
+            entity.IDPSSODescriptor protocolSupportEnumeration: protocol_enumeration, WantAuthnRequestsSigned: want_authn_requests_signed.present? do |descriptor|
               build_key_descriptor descriptor
               build_name_id_formats descriptor
               descriptor.SingleSignOnService Binding: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
@@ -154,6 +154,7 @@ module SamlIdp
       support_email
       organization_name
       organization_url
+      want_authn_requests_signed
       attribute_service_location
       single_service_post_location
       single_logout_service_post_location

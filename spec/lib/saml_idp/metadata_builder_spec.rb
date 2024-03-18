@@ -46,6 +46,15 @@ module SamlIdp
       expect(subject.fresh.scan(/SingleLogoutService/).count).to eq(2)
     end
 
+    it "does not want requests signed by default" do
+      expect(subject.fresh.scan(/WantAuthnRequestsSigned="false"/).count).to eq(1)
+    end
+
+    it "wants requests signed when told to " do
+      subject.configurator.want_authn_requests_signed = true
+      expect(subject.fresh.scan(/WantAuthnRequestsSigned="true"/).count).to eq(1)
+    end
+
     def slo_regex(binding, location)
       %r{<SingleLogoutService Binding=.+#{binding}.+ Location=.+#{location}.+/>}
     end

@@ -8,6 +8,7 @@ module SamlIdp
     attr_accessor :algorithm
     attr_accessor :organization_name
     attr_accessor :organization_url
+    attr_accessor :want_authn_requests_signed
     attr_accessor :base_saml_location
     attr_accessor :entity_id
     attr_accessor :reference_id_generator
