@@ -62,10 +62,10 @@ module SamlIdp
           begin
             OpenSSL::X509::Certificate.new(cert_text)
           rescue OpenSSL::X509::CertificateError => e
-            return soft ? false : (raise ValidationError.new(
+            return @raise_request_errors ? (raise ValidationError.new(
               'Invalid certificate',
-              :invalid_certificate
-            ))
+              :invalid_certificate,
+            )) : true
           end
 
         # check cert matches registered idp cert
@@ -74,10 +74,10 @@ module SamlIdp
         plain_idp_cert_fingerprint = idp_cert_fingerprint.gsub(/[^a-zA-Z0-9]/, '').downcase
 
         if fingerprint != plain_idp_cert_fingerprint && sha1_fingerprint != plain_idp_cert_fingerprint
-          return soft ? false : (raise ValidationError.new(
+          return @raise_request_errors ? (raise ValidationError.new(
             'Fingerprint mismatch',
             :fingerprint_mismatch
-          ))
+          )) : false
         end
 
         validate_doc(base64_cert, soft, options)
@@ -266,10 +266,10 @@ module SamlIdp
         end
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
-          return soft ? false : (raise ValidationError.new(
+          return @raise_request_errors ? (raise ValidationError.new(
             'Key validation error',
             :key_validation_error
-          ))
+          )) : false
         end
 
         true
