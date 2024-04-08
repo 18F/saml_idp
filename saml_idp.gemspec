@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.authors = ["Jon Phenow", 'Peter Karman']
   s.email = %q{peter.karman@gsa.gov}
   s.homepage = %q{http://github.com/18F/saml_idp}
-  s.summary = %q{SAML Indentity Provider in Ruby}
+  s.summary = %q{SAML Identity Provider in Ruby}
   s.description = %q{SAML IdP (Identity Provider) library in ruby}
   s.date = Time.now.utc.strftime("%Y-%m-%d")
   s.files = Dir.glob("app/**/*") + Dir.glob("lib/**/*") + [
