@@ -14,6 +14,7 @@ module SamlIdp
 
     delegate :config, to: :SamlIdp
 
+    # TODO: remove matching_cert attribute
     attr_reader :matching_cert
 
     def valid?
@@ -21,6 +22,7 @@ module SamlIdp
     end
 
     def valid_signature?(doc, require_signature = false, options = {})
+      # TODO: remove matching_cert instantation here
       @matching_cert = Array(certs).find do |cert|
         doc.valid_signature?(fingerprint_cert(cert), options.merge(cert: cert))
       end
