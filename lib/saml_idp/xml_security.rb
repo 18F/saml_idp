@@ -143,7 +143,8 @@ module SamlIdp
           base64_cert,
           params[:SigAlg],
           Base64.decode64(params[:Signature]),
-          canon_string, soft
+          canon_string,
+          soft
         )
       end
 
@@ -158,8 +159,11 @@ module SamlIdp
 
         # store and remove signature node
         @sig_element ||= begin
-          element = REXML::XPath.first(@working_copy, '//ds:Signature',
-                                       { 'ds' => DSIG })
+          element = REXML::XPath.first(
+            @working_copy,
+            '//ds:Signature',
+            { 'ds' => DSIG }
+          )
           element.remove
         end
 
@@ -237,8 +241,11 @@ module SamlIdp
       end
 
       def extract_signed_element_id
-        reference_element = REXML::XPath.first(self,
-                                               '//ds:Signature/ds:SignedInfo/ds:Reference', { 'ds' => DSIG })
+        reference_element = REXML::XPath.first(
+          self,
+          '//ds:Signature/ds:SignedInfo/ds:Reference',
+          { 'ds' => DSIG }
+        )
         return if reference_element.nil?
 
         self.signed_element_id = reference_element.attribute('URI').value[1..-1]
@@ -247,10 +254,14 @@ module SamlIdp
       def canon_algorithm(element)
         algorithm = element.attribute('Algorithm').value if element
         case algorithm
-        when 'http://www.w3.org/2001/10/xml-exc-c14n#'         then Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
-        when 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315' then Nokogiri::XML::XML_C14N_1_0
-        when 'http://www.w3.org/2006/12/xml-c14n11'            then Nokogiri::XML::XML_C14N_1_1
-        else                                                        Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
+        when 'http://www.w3.org/2001/10/xml-exc-c14n#'
+          Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
+        when 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
+          Nokogiri::XML::XML_C14N_1_0
+        when 'http://www.w3.org/2006/12/xml-c14n11'
+          Nokogiri::XML::XML_C14N_1_1
+        else
+          Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
         end
       end
 

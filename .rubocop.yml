@@ -126,6 +126,11 @@ Layout/ParameterAlignment:
   # But it can be overridden by setting this parameter
   IndentationWidth: ~
 
+Style/Alias:
+  Description: Enforces the use of `#alias_method`
+  StyleGuide: 'https://github.com/rubocop/ruby-style-guide#alias_method'
+  EnforcedStyle: prefer_alias_method
+
 Style/AndOr:
   Description: Use &&/|| instead of and/or.
   StyleGuide: https://github.com/bbatsov/ruby-style-guide#no-and-or-or

@@ -21,22 +21,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.rdoc_options = ['--charset=UTF-8']
 
-  s.post_install_message = <<~INST
-    If you're just recently updating saml_idp - please be aware we've changed the default
-    certificate. See the PR and a description of why we've done this here:
-    https://github.com/sportngin/saml_idp/pull/29
-
-    If you just need to see the certificate `bundle open saml_idp` and go to
-    `lib/saml_idp/default.rb`
-
-    Similarly, please see the README about certificates - you should avoid using the
-    defaults in a Production environment. Post any issues you to github.
-
-    ** New in Version 0.3.0 **
-
-    Encrypted Assertions require the xmlenc gem. See the example in the Controller
-    section of the README.
-  INST
+  s.required_ruby_version = '>= 3.1.0'
 
   s.add_dependency('activesupport')
   s.add_dependency('builder')

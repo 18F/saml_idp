@@ -97,7 +97,7 @@ module SamlIdp
         end
       end
     end
-    alias raw fresh
+    alias_method :raw, :fresh
     private :fresh
 
     def encrypt(opts = {})

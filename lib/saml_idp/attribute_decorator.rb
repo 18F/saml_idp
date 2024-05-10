@@ -1,7 +1,7 @@
 require 'delegate'
 module SamlIdp
   class AttributeDecorator < SimpleDelegator
-    alias source __getobj__
+    alias_method :source, :__getobj__
 
     def initialize(*)
       super

@@ -3,7 +3,9 @@ require 'saml_idp/response_builder'
 module SamlIdp
   class SamlResponse
     attr_accessor :assertion_with_signature, :reference_id, :response_id, :issuer_uri, :principal,
-                  :audience_uri, :saml_request_id, :saml_acs_url, :algorithm, :authn_context_classref, :name_id_format, :x509_certificate, :secret_key, :cloudhsm_key_label, :expiry, :encryption_opts
+                  :audience_uri, :saml_request_id, :saml_acs_url, :algorithm,
+                  :authn_context_classref, :name_id_format, :x509_certificate, :secret_key,
+                  :cloudhsm_key_label, :expiry, :encryption_opts
 
     # rubocop:disable Metrics/ParameterLists
     def initialize(

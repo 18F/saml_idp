@@ -55,7 +55,7 @@ module SamlIdp
         end
       end
     end
-    alias raw fresh
+    alias_method :raw, :fresh
 
     def build_key_descriptor(el)
       el.KeyDescriptor use: 'signing' do |key_descriptor|
