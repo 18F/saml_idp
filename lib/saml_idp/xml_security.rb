@@ -121,9 +121,7 @@ module SamlIdp
 
       # matches RubySaml::Utils
       def build_query(params)
-        type, data, relay_state, sig_alg = %i[type data relay_state sig_alg].map do |k|
-          params[k]
-        end
+        type, data, relay_state, sig_alg = params.values_at(:type, :data, :relay_state, :sig_alg)
 
         url_string = "#{type}=#{CGI.escape(data)}"
         url_string << "&RelayState=#{CGI.escape(relay_state)}" if relay_state
