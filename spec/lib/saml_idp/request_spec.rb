@@ -250,14 +250,14 @@ module SamlIdp
       end
     end
 
-    describe '#requested_vtr_authn_context' do
+    describe '#requested_vtr_authn_contexts' do
       subject { described_class.new raw_authn_request }
 
       context 'no vtr context requested' do
         let(:authn_context_classref) { '' }
 
-        it 'returns and empty array' do
-          expect(subject.requested_vtr_authn_context).to eq([])
+        it 'returns an empty array' do
+          expect(subject.requested_vtr_authn_contexts).to eq([])
         end
       end
 
@@ -265,7 +265,7 @@ module SamlIdp
         let(:authn_context_classref) { build_authn_context_classref(vtr) }
 
         it 'returns the vrt' do
-          expect(subject.requested_vtr_authn_context).to eq([vtr])
+          expect(subject.requested_vtr_authn_contexts).to eq([vtr])
         end
       end
 
@@ -273,7 +273,7 @@ module SamlIdp
         let(:authn_context_classref) { build_authn_context_classref([vtr, ial]) }
 
         it 'returns the vrt' do
-          expect(subject.requested_vtr_authn_context).to eq([vtr])
+          expect(subject.requested_vtr_authn_contexts).to eq([vtr])
         end
       end
 
@@ -281,7 +281,7 @@ module SamlIdp
         let(:authn_context_classref) { build_authn_context_classref(['C1.C2.P1.Pb', 'C1.C2.P1']) }
 
         it 'returns all of the vectors in an array' do
-          expect(subject.requested_vtr_authn_context).to eq(['C1.C2.P1.Pb', 'C1.C2.P1'])
+          expect(subject.requested_vtr_authn_contexts).to eq(['C1.C2.P1.Pb', 'C1.C2.P1'])
         end
       end
 
@@ -292,7 +292,7 @@ module SamlIdp
         end
 
         it 'does not match on the context' do
-          expect(subject.requested_vtr_authn_context).to eq([])
+          expect(subject.requested_vtr_authn_contexts).to eq([])
         end
       end
 
@@ -301,7 +301,7 @@ module SamlIdp
         let(:authn_context_classref) { build_authn_context_classref(aal) }
 
         it 'does not match on the context' do
-          expect(subject.requested_vtr_authn_context).to eq([])
+          expect(subject.requested_vtr_authn_contexts).to eq([])
         end
       end
     end
