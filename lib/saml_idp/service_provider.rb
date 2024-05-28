@@ -21,7 +21,7 @@ module SamlIdp
     end
 
     def valid_signature?(doc, require_signature = false, options = {})
-      return true unless require_signature || should_validate_signature?
+      # return true unless require_signature || should_validate_signature?
 
       if cert_array.empty?
         raise SamlIdp::XMLSecurity::SignedDocument::ValidationError.new(

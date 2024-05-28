@@ -75,7 +75,7 @@ module Saml
 
       def valid_signature?(fingerprint, options = {})
         (signed? || options_have_signature(options)) &&
-          signed_document.validate(fingerprint, true, options)
+          signed_document.validate(fingerprint, false, options)
       end
 
       def signed_document
