@@ -46,8 +46,8 @@ module SamlIdp
       def validate(idp_cert_fingerprint, soft = true, options = {})
         log 'Validate the fingerprint'
         base64_cert = find_base64_cert(options)
-        cert_text   = Base64.decode64(base64_cert)
-        cert        =
+        cert_text = Base64.decode64(base64_cert)
+        cert =
           begin
             OpenSSL::X509::Certificate.new(cert_text)
           rescue OpenSSL::X509::CertificateError => e
@@ -198,7 +198,7 @@ module SamlIdp
           uri = ref.attributes.get_attribute('URI').value
 
           hashed_element = document.at_xpath("//*[@ID='#{uri[1..-1]}']")
-          canon_algorithm  = canon_algorithm REXML::XPath.first(
+          canon_algorithm = canon_algorithm REXML::XPath.first(
             ref,
             '//ds:CanonicalizationMethod',
             sig_namespace_hash
