@@ -96,7 +96,7 @@ module SamlIdp
 
       describe '#digest_method_algorithm' do
         let(:document) do
-          XMLSecurity::SignedDocument.new(fixture(:valid_sha256_no_ds_namespace, false))
+          XMLSecurity::SignedDocument.new(fixture(:no_ds_namespace, false))
         end
         let(:sig_namespace_hash) { { 'ds' => 'http://www.w3.org/2000/09/xmldsig#' } }
 
