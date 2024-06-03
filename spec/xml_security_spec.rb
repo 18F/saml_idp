@@ -57,6 +57,32 @@ module SamlIdp
           )
         end
       end
+
+      describe 'options[:no_namespace_enabled]' do
+        let(:raw_xml) do
+          SamlIdp::Request.from_deflated_request(
+            signed_auth_request
+          ).raw_xml
+        end
+
+        let(:document) { XMLSecurity::SignedDocument.new(raw_xml) }
+        let(:no_namespace_enabled) { true }
+        let(:options) {{ no_namespace_enabled: }}
+
+        context 'no_namespace_enabled is set to true' do
+          it 'validates the doc successfully' do
+            expect(document.validate_doc(base64cert, true, options)).to be true
+          end
+        end
+
+        context 'no_namespace_enabled is set to false' do
+          let(:no_namespace_enabled) { false }
+
+          it 'validates the doc successfully' do
+            expect(document.validate_doc(base64cert, true, options)).to be true
+          end
+        end
+      end
     end
 
     describe '#validate' do
@@ -122,6 +148,16 @@ module SamlIdp
             ref,
             sig_namespace_hash
           )).to eq OpenSSL::Digest::SHA256
+        end
+
+        describe 'when the namespace hash is not defined' do
+          it 'returns the default algorithm type' do
+            expect(document.send(
+              :digest_method_algorithm,
+              ref,
+              {}
+            )).to eq OpenSSL::Digest::SHA1
+          end
         end
       end
 

@@ -70,7 +70,11 @@ module SamlIdp
         if options[:get_params] && options[:get_params][:Signature]
           validate_doc_params_signature(base64_cert, soft, options[:get_params])
         else
-          validate_doc_embedded_signature(base64_cert, soft)
+          validate_doc_embedded_signature(
+            base64_cert,
+            soft,
+            no_namespace_enabled: options[:no_namespace_enabled]
+          )
         end
       end
 
@@ -149,7 +153,7 @@ module SamlIdp
         )
       end
 
-      def validate_doc_embedded_signature(base64_cert, soft = true)
+      def validate_doc_embedded_signature(base64_cert, soft = true, no_namespace_enabled: false)
         # check for inclusive namespaces
         inclusive_namespaces = extract_inclusive_namespaces
         document = Nokogiri.parse(to_s)
@@ -209,7 +213,11 @@ module SamlIdp
             inclusive_namespaces
           )
 
-          digest_algorithm = digest_method_algorithm(ref, sig_namespace_hash)
+          digest_algorithm = if no_namespace_enabled
+              digest_method_algorithm(ref, sig_namespace_hash)
+            else
+              algorithm(REXML::XPath.first(ref, '//ds:DigestMethod'))
+            end
 
           hash = digest_algorithm.digest(canon_hashed_element)
           digest_value = Base64.decode64(REXML::XPath.first(
