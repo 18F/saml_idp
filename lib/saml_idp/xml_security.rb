@@ -214,10 +214,10 @@ module SamlIdp
           )
 
           digest_algorithm = if no_namespace_enabled
-              digest_method_algorithm(ref, sig_namespace_hash)
-            else
-              algorithm(REXML::XPath.first(ref, '//ds:DigestMethod'))
-            end
+            digest_method_algorithm(ref, sig_namespace_hash)
+          else
+            algorithm(REXML::XPath.first(ref, '//ds:DigestMethod'))
+          end
 
           hash = digest_algorithm.digest(canon_hashed_element)
           digest_value = Base64.decode64(REXML::XPath.first(

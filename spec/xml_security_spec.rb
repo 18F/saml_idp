@@ -67,7 +67,7 @@ module SamlIdp
 
         let(:document) { XMLSecurity::SignedDocument.new(raw_xml) }
         let(:no_namespace_enabled) { true }
-        let(:options) {{ no_namespace_enabled: }}
+        let(:options) { { no_namespace_enabled: } }
 
         context 'no_namespace_enabled is set to true' do
           it 'validates the doc successfully' do
