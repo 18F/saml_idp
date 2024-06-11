@@ -170,10 +170,27 @@ module SamlIdp
 
       Array(service_provider.certs).find do |cert|
         document.valid_signature?(
-          OpenSSL::Digest::SHA256.new(cert.to_der).hexdigest,
+          fingerprint(cert),
           options.merge(cert:, digest_method_fix_enabled: true)
         )
       end
+    end
+
+    def cert_errors
+      return nil unless signed?
+      return nil if matching_cert.present?
+      return [{ cert: nil, error_code: :no_registered_certs }] if service_provider.certs.blank?
+
+      Array(service_provider.certs).map do |cert|
+        document.gather_errors(
+          fingerprint(cert),
+          options.merge(cert:, digest_method_fix_enabled: true)
+        )
+      end
+    end
+
+    def fingerprint(cert)
+      OpenSSL::Digest::SHA256.new(cert.to_der).hexdigest
     end
 
     def signed?
@@ -191,7 +208,7 @@ module SamlIdp
     end
 
     def service_provider
-      return unless issuer.present?
+      return if issuer.blank?
 
       @_service_provider ||= ServiceProvider.new((service_provider_finder[issuer] || {}).merge(identifier: issuer))
     end

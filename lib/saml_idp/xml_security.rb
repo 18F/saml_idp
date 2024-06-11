@@ -32,7 +32,15 @@ require 'digest/sha2'
 module SamlIdp
   module XMLSecurity
     class SignedDocument < REXML::Document
-      ValidationError = Class.new(StandardError)
+      class ValidationError < StandardError
+        attr_reader :error_code
+
+        def initialize(msg = nil, error_code = nil)
+          @error_code = error_code
+          super(msg)
+        end
+      end
+
       C14N = 'http://www.w3.org/2001/10/xml-exc-c14n#'
       DSIG = 'http://www.w3.org/2000/09/xmldsig#'
 
@@ -60,7 +68,8 @@ module SamlIdp
         plain_idp_cert_fingerprint = idp_cert_fingerprint.gsub(/[^a-zA-Z0-9]/, '').downcase
 
         if fingerprint != plain_idp_cert_fingerprint && sha1_fingerprint != plain_idp_cert_fingerprint
-          return soft ? false : (raise ValidationError.new('Fingerprint mismatch'))
+          return soft ? false : (raise ValidationError.new('Fingerprint mismatch',
+                                                           :fingerprint_mismatch))
         end
 
         validate_doc(base64_cert, soft, options)
