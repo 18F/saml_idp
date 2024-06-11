@@ -178,7 +178,12 @@ module SamlIdp
 
     def cert_errors
       return nil unless signed?
-      return nil if matching_cert.present?
+      begin
+        return nil if matching_cert.present?
+      rescue SamlIdp::XMLSecurity::SignedDocument::ValidationError => e
+        return [{ cert: nil, error_code: e.error_code }]
+      end
+
       return [{ cert: nil, error_code: :no_registered_certs }] if service_provider.certs.blank?
 
       Array(service_provider.certs).map do |cert|

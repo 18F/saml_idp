@@ -59,7 +59,11 @@ module SamlIdp
           begin
             OpenSSL::X509::Certificate.new(cert_text)
           rescue OpenSSL::X509::CertificateError => e
-            return soft ? false : (raise ValidationError.new('Invalid certificate'))
+            return soft ?  false : (raise ValidationError.new(
+                'Invalid certificate',
+                :invalid_certificate_in_request
+              )
+            )
           end
 
         # check cert matches registered idp cert
@@ -114,17 +118,17 @@ module SamlIdp
         if cert_element
           return cert_element.text if cert_element.text.present?
 
-          raise ValidationError.new('Certificate element present in response (ds:X509Certificate) but evaluating to nil')
+          raise ValidationError.new('Certificate element present in response (ds:X509Certificate) but evaluating to nil', :no_certificate_in_request)
         elsif options[:cert]
           if options[:cert].is_a?(String)
             options[:cert]
           elsif options[:cert].is_a?(OpenSSL::X509::Certificate)
             Base64.encode64(options[:cert].to_pem)
           else
-            raise ValidationError.new('options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate')
+            raise ValidationError.new('options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate', :not_base64_or_cert)
           end
         else
-          raise ValidationError.new('Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]')
+          raise ValidationError.new('Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]', :cert_missing)
         end
       end
 
@@ -189,8 +193,8 @@ module SamlIdp
           '//ds:SignedInfo',
           { 'ds' => DSIG }
         )
-          { 'ds' => DSIG }
-        end
+                               { 'ds' => DSIG }
+                             end
 
         # verify signature
         signed_info_element = REXML::XPath.first(
@@ -240,7 +244,8 @@ module SamlIdp
           ).text)
 
           unless digests_match?(hash, digest_value)
-            return soft ? false : (raise ValidationError.new('Digest mismatch'))
+            return soft ? false : (raise ValidationError.new(
+              'Digest mismatch', :digest_mismatch))
           end
         end
 
@@ -275,7 +280,7 @@ module SamlIdp
         signature_algorithm = algorithm(sig_alg)
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
-          return soft ? false : (raise ValidationError.new('Key validation error'))
+          return soft ? false : (raise ValidationError.new('Key validation error', :key_validation_error))
         end
 
         true
