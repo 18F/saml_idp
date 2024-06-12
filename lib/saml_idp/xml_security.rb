@@ -59,10 +59,10 @@ module SamlIdp
           begin
             OpenSSL::X509::Certificate.new(cert_text)
           rescue OpenSSL::X509::CertificateError => e
-            return soft ?  false : (raise ValidationError.new(
-                'Invalid certificate',
-                :invalid_certificate_in_request
-              )
+            return false if soft
+            raise ValidationError.new(
+              'Invalid certificate',
+              :invalid_certificate_in_request
             )
           end
 
@@ -118,17 +118,23 @@ module SamlIdp
         if cert_element
           return cert_element.text if cert_element.text.present?
 
-          raise ValidationError.new('Certificate element present in response (ds:X509Certificate) but evaluating to nil', :no_certificate_in_request)
+          raise ValidationError.new(
+            'Certificate element present in response (ds:X509Certificate) but evaluating to nil', :no_certificate_in_request
+          )
         elsif options[:cert]
           if options[:cert].is_a?(String)
             options[:cert]
           elsif options[:cert].is_a?(OpenSSL::X509::Certificate)
             Base64.encode64(options[:cert].to_pem)
           else
-            raise ValidationError.new('options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate', :not_base64_or_cert)
+            raise ValidationError.new(
+              'options[:cert] must be Base64-encoded String or OpenSSL::X509::Certificate', :not_base64_or_cert
+            )
           end
         else
-          raise ValidationError.new('Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]', :cert_missing)
+          raise ValidationError.new(
+            'Certificate element missing in response (ds:X509Certificate) and not provided in options[:cert]', :cert_missing
+          )
         end
       end
 
@@ -188,15 +194,14 @@ module SamlIdp
           element.remove
         end
 
-        sig_namespace_hash = if REXML::XPath.first(
+        # TODO: Should we be discovering/assigning the sig_namespace_hash differently?
+        sig_ns_elem = REXML::XPath.first(
           @sig_element,
           '//ds:SignedInfo',
           { 'ds' => DSIG }
         )
-                               { 'ds' => DSIG }
-                             end
+        sig_namespace_hash = { 'ds' => DSIG } if sig_ns_elem
 
-        # verify signature
         signed_info_element = REXML::XPath.first(
           @sig_element,
           '//ds:SignedInfo',
@@ -245,7 +250,8 @@ module SamlIdp
 
           unless digests_match?(hash, digest_value)
             return soft ? false : (raise ValidationError.new(
-              'Digest mismatch', :digest_mismatch))
+              'Digest mismatch', :digest_mismatch
+            ))
           end
         end
 
@@ -280,7 +286,8 @@ module SamlIdp
         signature_algorithm = algorithm(sig_alg)
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
-          return soft ? false : (raise ValidationError.new('Key validation error', :key_validation_error))
+          return soft ? false : (raise ValidationError.new('Key validation error',
+                                                           :key_validation_error))
         end
 
         true

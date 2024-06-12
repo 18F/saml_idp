@@ -500,7 +500,6 @@ module SamlIdp
         describe 'the service provider has no registered certs' do
           before { subject.service_provider.certs = [] }
 
-
           it 'returns a no registered cert error' do
             expect(subject.cert_errors).to eq [{cert: nil, error_code: :no_registered_certs}]
           end
