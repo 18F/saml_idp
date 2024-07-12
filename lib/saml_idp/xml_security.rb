@@ -97,10 +97,10 @@ module SamlIdp
         if options[:get_params] && options[:get_params][:SigAlg]
           algorithm(options[:get_params][:SigAlg])
         else
-          ref_elem = REXML::XPath.first(self, '//ds:Reference', { 'ds' => DSIG })
+          ref_elem = noko_document.at_xpath('//*:Reference')
           return nil unless ref_elem
 
-          algorithm(REXML::XPath.first(ref_elem, '//ds:DigestMethod', { 'ds' => DSIG }))
+          algorithm(ref_elem.at_xpath('//*:DigestMethod'))
         end
       end
 
@@ -114,7 +114,7 @@ module SamlIdp
       end
 
       def find_base64_cert(options)
-        cert_element = REXML::XPath.first(self, '//ds:X509Certificate', { 'ds' => DSIG })
+        cert_element = noko_document.at_xpath('//*:X509Certificate')
         if cert_element
           return cert_element.text if cert_element.text.present?
 
@@ -179,56 +179,26 @@ module SamlIdp
       )
         # check for inclusive namespaces
         inclusive_namespaces = extract_inclusive_namespaces
-        document = Nokogiri.parse(to_s)
 
-        # create a working copy so we don't modify the original
-        @working_copy ||= REXML::Document.new(to_s).root
 
-        # store and remove signature node
-        @sig_element ||= begin
-          element = REXML::XPath.first(
-            @working_copy,
-            '//ds:Signature',
-            { 'ds' => DSIG }
-          )
-          element.remove
-        end
+        sig_element = noko_document.at_xpath('//*:Signature')
+        sig_namespace_hash = sig_element.at_xpath('//*:SignedInfo')&.namespaces
+        noko_signed_info_element = sig_element.at_xpath('./*:SignedInfo')
 
-        # TODO: Should we be discovering/assigning the sig_namespace_hash differently?
-        sig_ns_elem = REXML::XPath.first(
-          @sig_element,
-          '//ds:SignedInfo',
-          { 'ds' => DSIG }
-        )
-        sig_namespace_hash = { 'ds' => DSIG } if sig_ns_elem
-
-        signed_info_element = REXML::XPath.first(
-          @sig_element,
-          '//ds:SignedInfo',
-          sig_namespace_hash
-        )
-
-        noko_sig_element = document.at_xpath('//ds:Signature', 'ds' => DSIG)
-        noko_signed_info_element = noko_sig_element.at_xpath('./ds:SignedInfo', 'ds' => DSIG)
-        canon_algorithm = canon_algorithm REXML::XPath.first(
-          @sig_element,
-          '//ds:CanonicalizationMethod',
-          sig_namespace_hash
+        canon_algorithm = canon_algorithm(
+          sig_element.at_xpath('//*:CanonicalizationMethod')
         )
 
         canon_string = noko_signed_info_element.canonicalize(canon_algorithm)
-        noko_sig_element.remove
-
         # check digests
-        REXML::XPath.each(@sig_element, '//ds:Reference', sig_namespace_hash) do |ref|
-          uri = ref.attributes.get_attribute('URI').value
+        sig_element.xpath('//*:Reference').each do |ref|
+          uri = ref.attribute('URI').value
 
-          hashed_element = document.at_xpath("//*[@ID='#{uri[1..-1]}']")
-          canon_algorithm = canon_algorithm REXML::XPath.first(
-            ref,
-            '//ds:CanonicalizationMethod',
-            sig_namespace_hash
-          )
+          hashed_element = noko_document.dup.at_xpath("//*[@ID='#{uri[1..-1]}']")
+          # removing the Signature node and children to get digest
+          hashed_element.at_xpath('//*:Signature').remove
+
+          canon_algorithm = canon_algorithm(ref.at_xpath('//*:CanonicalizationMethod'))
 
           canon_hashed_element = hashed_element.canonicalize(
             canon_algorithm,
@@ -237,16 +207,12 @@ module SamlIdp
 
           digest_algorithm = digest_method_algorithm(
             ref,
-            sig_namespace_hash,
             digest_method_fix_enabled
           )
 
           hash = digest_algorithm.digest(canon_hashed_element)
-          digest_value = Base64.decode64(REXML::XPath.first(
-            ref,
-            '//ds:DigestValue',
-            sig_namespace_hash
-          ).text)
+
+          digest_value = Base64.decode64(ref.at_xpath('//*:DigestValue').text)
 
           unless digests_match?(hash, digest_value)
             return soft ? false : (raise ValidationError.new(
@@ -255,28 +221,21 @@ module SamlIdp
           end
         end
 
-        base64_signature = REXML::XPath.first(
-          @sig_element,
-          '//ds:SignatureValue',
-          sig_namespace_hash
-        ).text
-
+        base64_signature = sig_element.at_xpath('//*:SignatureValue').text
         signature = Base64.decode64(base64_signature)
-        sig_alg = REXML::XPath.first(
-          signed_info_element,
-          '//ds:SignatureMethod',
-          sig_namespace_hash
-        )
+
+        sig_alg = sig_element.at_xpath('//*:SignatureMethod')
 
         log '***** validate_doc_embedded_signature: verify_signature:'
         verify_signature(base64_cert, sig_alg, signature, canon_string, soft)
       end
 
-      def digest_method_algorithm(ref, hash, digest_method_fix_enabled)
-        if digest_method_fix_enabled
-          algorithm(REXML::XPath.first(ref, '//ds:DigestMethod', hash))
+      def digest_method_algorithm(ref, digest_method_fix_enabled)
+        digest_method = ref.at_xpath('//*:DigestMethod')
+        if digest_method_fix_enabled || digest_method.namespace.prefix.present?
+          algorithm(digest_method)
         else
-          algorithm(REXML::XPath.first(ref, '//ds:DigestMethod'))
+          algorithm(nil)
         end
       end
 
@@ -298,11 +257,7 @@ module SamlIdp
       end
 
       def extract_signed_element_id
-        reference_element = REXML::XPath.first(
-          self,
-          '//ds:Signature/ds:SignedInfo/ds:Reference',
-          { 'ds' => DSIG }
-        )
+        reference_element = noko_document.at_xpath('//*:Signature/*:SignedInfo/*:Reference')
         return if reference_element.nil?
 
         self.signed_element_id = reference_element.attribute('URI').value[1..-1]
@@ -324,7 +279,7 @@ module SamlIdp
 
       def algorithm(element)
         algorithm = element
-        algorithm = element.attribute('Algorithm').value if algorithm.is_a?(REXML::Element)
+        algorithm = element.attribute('Algorithm').value if algorithm.is_a?(Nokogiri::XML::Element)
         log "~~~~~~ Algorithm: #{algorithm}"
         algorithm = algorithm && algorithm =~ /(rsa-)?sha(.*?)$/i && ::Regexp.last_match(2).to_i
         case algorithm
@@ -344,12 +299,13 @@ module SamlIdp
       end
 
       def extract_inclusive_namespaces
-        if element = REXML::XPath.first(self, '//ec:InclusiveNamespaces', { 'ec' => C14N })
-          prefix_list = element.attributes.get_attribute('PrefixList').value
-          prefix_list.split(' ')
-        else
-          []
-        end
+        noko_document.at_xpath(
+          "//ec:InclusiveNamespaces", { 'ec' =>  C14N }
+        )&.attr('PrefixList')&.split(' ') || []
+      end
+
+      def noko_document
+        @noko_document ||= Nokogiri.parse(to_s)
       end
 
       def log(msg, level: :debug)

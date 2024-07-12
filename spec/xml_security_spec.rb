@@ -108,9 +108,9 @@ module SamlIdp
 
         it 'raises a validation error when find_base64_cert returns nil' do
           response = Base64.decode64(valid_response_document)
+          response.sub!(%r{<ds:X509Certificate>.*</ds:X509Certificate>}, '<ds:X509Certificate></ds:X509Certificate>')
           document = XMLSecurity::SignedDocument.new(response)
-          REXML::XPath.first(document, '//ds:X509Certificate',
-                             { 'ds' => 'http://www.w3.org/2000/09/xmldsig#' }).text = nil
+
           expect { document.validate('a fingerprint', false) }.to(
             raise_error(
               SamlIdp::XMLSecurity::SignedDocument::ValidationError,
@@ -125,46 +125,37 @@ module SamlIdp
           XMLSecurity::SignedDocument.new(fixture(:no_ds_namespace_request, false))
         end
         let(:sig_namespace_hash) { { 'ds' => 'http://www.w3.org/2000/09/xmldsig#' } }
-
-        let(:el) do
-          REXML::XPath.first(
-            document,
-            '//ds:Signature',
-            sig_namespace_hash
-          )
-        end
+        let(:noko_document) { Nokogiri.parse(document.to_s) }
 
         let(:sig_element) do
-          REXML::XPath.first(el, '//ds:Reference', sig_namespace_hash)
+          noko_document.at_xpath('//*:Signature')
         end
 
         let(:ref) do
-          REXML::XPath.first(sig_element, '//ds:Reference', sig_namespace_hash)
+          sig_element.at_xpath('//*:Reference')
         end
 
         context 'digest_method_fix_enabled is true' do
           let(:digest_method_fix_enabled) { true }
 
           context 'document does not have ds namespace for Signature elements' do
-            let(:document) do
-              XMLSecurity::SignedDocument.new(fixture(:no_ds_namespace_request, false))
-            end
-
             it 'returns the value in the DigestMethod node' do
               expect(document.send(
                        :digest_method_algorithm,
                        ref,
-                       sig_namespace_hash,
                        digest_method_fix_enabled
                      )).to eq OpenSSL::Digest::SHA256
             end
 
-            describe 'when the namespace hash is not defined' do
+            describe 'when the DigestMethod node does not exist' do
+              before do
+                ref.at_xpath('//*:DigestMethod').remove
+              end
+
               it 'returns the default algorithm type' do
                 expect(document.send(
                          :digest_method_algorithm,
                          ref,
-                         {},
                          digest_method_fix_enabled
                        )).to eq OpenSSL::Digest::SHA1
               end
@@ -184,17 +175,19 @@ module SamlIdp
               expect(document.send(
                        :digest_method_algorithm,
                        ref,
-                       sig_namespace_hash,
                        digest_method_fix_enabled
                      )).to eq OpenSSL::Digest::SHA256
             end
 
-            describe 'when the namespace hash is not defined' do
+            describe 'when the DigestMethod node does not exist' do
+              before do
+                ref.at_xpath('//*:DigestMethod').remove
+              end
+
               it 'returns the default algorithm type' do
                 expect(document.send(
                          :digest_method_algorithm,
                          ref,
-                         {},
                          digest_method_fix_enabled
                        )).to eq OpenSSL::Digest::SHA1
               end
@@ -214,7 +207,6 @@ module SamlIdp
               expect(document.send(
                        :digest_method_algorithm,
                        ref,
-                       sig_namespace_hash,
                        digest_method_fix_enabled
                      )).to eq OpenSSL::Digest::SHA1
             end
@@ -224,7 +216,6 @@ module SamlIdp
                 expect(document.send(
                          :digest_method_algorithm,
                          ref,
-                         {},
                          digest_method_fix_enabled
                        )).to eq OpenSSL::Digest::SHA1
               end
@@ -244,7 +235,6 @@ module SamlIdp
               expect(document.send(
                        :digest_method_algorithm,
                        ref,
-                       sig_namespace_hash,
                        digest_method_fix_enabled
                      )).to eq OpenSSL::Digest::SHA256
             end
@@ -255,7 +245,6 @@ module SamlIdp
                 expect(document.send(
                          :digest_method_algorithm,
                          ref,
-                         {},
                          digest_method_fix_enabled
                        )).to eq OpenSSL::Digest::SHA256
               end
