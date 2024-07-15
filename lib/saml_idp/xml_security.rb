@@ -22,8 +22,6 @@
 # Copyright 2007 Sun Microsystems Inc. All Rights Reserved
 # Portions Copyrighted 2007 Todd W Saxton.
 
-require 'rexml/document'
-require 'rexml/xpath'
 require 'openssl'
 require 'nokogiri'
 require 'digest/sha1'
@@ -31,7 +29,7 @@ require 'digest/sha2'
 
 module SamlIdp
   module XMLSecurity
-    class SignedDocument < REXML::Document
+    class SignedDocument
       class ValidationError < StandardError
         attr_reader :error_code
 
@@ -44,11 +42,10 @@ module SamlIdp
       C14N = 'http://www.w3.org/2001/10/xml-exc-c14n#'
       DSIG = 'http://www.w3.org/2000/09/xmldsig#'
 
-      attr_accessor :signed_element_id
+      attr_accessor :document
 
       def initialize(response)
-        super(response)
-        extract_signed_element_id
+        @document = Nokogiri.parse(response)
       end
 
       def validate(idp_cert_fingerprint, soft = true, options = {})
@@ -97,7 +94,7 @@ module SamlIdp
         if options[:get_params] && options[:get_params][:SigAlg]
           algorithm(options[:get_params][:SigAlg])
         else
-          ref_elem = noko_document.at_xpath('//*:Reference')
+          ref_elem = document.at_xpath('//*:Reference')
           return nil unless ref_elem
 
           algorithm(ref_elem.at_xpath('//*:DigestMethod'))
@@ -114,7 +111,7 @@ module SamlIdp
       end
 
       def find_base64_cert(options)
-        cert_element = noko_document.at_xpath('//*:X509Certificate')
+        cert_element = document.at_xpath('//*:X509Certificate')
         if cert_element
           return cert_element.text if cert_element.text.present?
 
@@ -139,7 +136,7 @@ module SamlIdp
       end
 
       def request?
-        root.name != 'Response'
+        document.root.name != 'Response'
       end
 
       # matches RubySaml::Utils
@@ -181,7 +178,7 @@ module SamlIdp
         inclusive_namespaces = extract_inclusive_namespaces
 
 
-        sig_element = noko_document.at_xpath('//*:Signature')
+        sig_element = document.at_xpath('//*:Signature')
         sig_namespace_hash = sig_element.at_xpath('//*:SignedInfo')&.namespaces
         noko_signed_info_element = sig_element.at_xpath('./*:SignedInfo')
 
@@ -194,7 +191,7 @@ module SamlIdp
         sig_element.xpath('//*:Reference').each do |ref|
           uri = ref.attribute('URI').value
 
-          hashed_element = noko_document.dup.at_xpath("//*[@ID='#{uri[1..-1]}']")
+          hashed_element = document.dup.at_xpath("//*[@ID='#{uri[1..-1]}']")
           # removing the Signature node and children to get digest
           hashed_element.at_xpath('//*:Signature').remove
 
@@ -257,10 +254,10 @@ module SamlIdp
       end
 
       def extract_signed_element_id
-        reference_element = noko_document.at_xpath('//*:Signature/*:SignedInfo/*:Reference')
+        reference_element = document.at_xpath('//*:Signature/*:SignedInfo/*:Reference')
         return if reference_element.nil?
 
-        self.signed_element_id = reference_element.attribute('URI').value[1..-1]
+        @signed_element_id = reference_element.attribute('URI').value[1..-1]
       end
 
       def canon_algorithm(element)
@@ -299,13 +296,9 @@ module SamlIdp
       end
 
       def extract_inclusive_namespaces
-        noko_document.at_xpath(
+        document.at_xpath(
           "//ec:InclusiveNamespaces", { 'ec' =>  C14N }
         )&.attr('PrefixList')&.split(' ') || []
-      end
-
-      def noko_document
-        @noko_document ||= Nokogiri.parse(to_s)
       end
 
       def log(msg, level: :debug)
