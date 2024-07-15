@@ -308,7 +308,6 @@ DEPENDENCIES
   pry-byebug
   rails (~> 7.1)
   rake
-  rexml
   rspec
   rubocop (= 1.62.0)
   rubocop-rails (= 2.9)
