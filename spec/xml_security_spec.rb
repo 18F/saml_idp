@@ -4,13 +4,14 @@ require 'xml_security'
 module SamlIdp
   describe 'XmlSecurity::SignedDocument' do
     let(:xml_string) { fixture('valid_response_sha1.xml', false) }
+    let(:ds_namespace) { { 'ds' => 'http://www.w3.org/2000/09/xmldsig#' } }
 
     subject do
       XMLSecurity::SignedDocument.new(xml_string)
     end
 
     let(:base64cert) do
-      subject.document.at_xpath('//*:X509Certificate').text
+      subject.document.at_xpath('//ds:X509Certificate', ds_namespace).text
     end
 
     describe '#validate_doc' do
@@ -137,14 +138,13 @@ module SamlIdp
 
       describe '#digest_method_algorithm' do
         let(:xml_string) { fixture(:no_ds_namespace_request, false) }
-        let(:sig_namespace_hash) { { 'ds' => 'http://www.w3.org/2000/09/xmldsig#' } }
 
         let(:sig_element) do
-          subject.document.at_xpath('//*:Signature')
+          subject.document.at_xpath('//ds:Signature | //Signature', ds_namespace)
         end
 
         let(:ref) do
-          sig_element.at_xpath('//*:Reference')
+          sig_element.at_xpath('//ds:Reference | //Reference', ds_namespace)
         end
 
         context 'digest_method_fix_enabled is true' do
@@ -161,7 +161,7 @@ module SamlIdp
 
             describe 'when the DigestMethod node does not exist' do
               before do
-                ref.at_xpath('//*:DigestMethod').remove
+                ref.at_xpath('//ds:DigestMethod | //DigestMethod', ds_namespace).remove
               end
 
               it 'returns the default algorithm type' do
@@ -191,7 +191,7 @@ module SamlIdp
 
             describe 'when the DigestMethod node does not exist' do
               before do
-                ref.at_xpath('//*:DigestMethod').remove
+                ref.at_xpath('//ds:DigestMethod | //DigestMethod', ds_namespace).remove
               end
 
               it 'returns the default algorithm type' do

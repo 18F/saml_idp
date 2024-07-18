@@ -41,6 +41,7 @@ module SamlIdp
 
       C14N = 'http://www.w3.org/2001/10/xml-exc-c14n#'
       DSIG = 'http://www.w3.org/2000/09/xmldsig#'
+      DS_NS = { "ds" => DSIG }
 
       attr_accessor :document
 
@@ -94,10 +95,10 @@ module SamlIdp
         if options[:get_params] && options[:get_params][:SigAlg]
           algorithm(options[:get_params][:SigAlg])
         else
-          ref_elem = document.at_xpath('//*:Reference')
+          ref_elem = document.at_xpath('//ds:Reference | //Reference', DS_NS)
           return nil unless ref_elem
 
-          algorithm(ref_elem.at_xpath('//*:DigestMethod'))
+          algorithm(ref_elem.at_xpath('//ds:DigestMethod | //DigestMethod', DS_NS))
         end
       end
 
@@ -111,7 +112,7 @@ module SamlIdp
       end
 
       def find_base64_cert(options)
-        cert_element = document.at_xpath('//*:X509Certificate')
+        cert_element = document.at_xpath('//ds:X509Certificate | //X509Certificate', DS_NS)
         if cert_element
           return cert_element.text if cert_element.text.present?
 
@@ -178,24 +179,25 @@ module SamlIdp
         inclusive_namespaces = extract_inclusive_namespaces
 
 
-        sig_element = document.at_xpath('//*:Signature')
-        sig_namespace_hash = sig_element.at_xpath('//*:SignedInfo')&.namespaces
-        signed_info_element = sig_element.at_xpath('./*:SignedInfo')
+        sig_element = document.at_xpath('//ds:Signature | //Signature', DS_NS)
+        signed_info_element = sig_element.at_xpath('./ds:SignedInfo | //SignedInfo', DS_NS)
 
         canon_algorithm = canon_algorithm(
-          sig_element.at_xpath('//*:CanonicalizationMethod')
+          sig_element.at_xpath('//ds:CanonicalizationMethod | //CanonicalizationMethod', DS_NS)
         )
 
         canon_string = signed_info_element.canonicalize(canon_algorithm)
         # check digests
-        sig_element.xpath('//*:Reference').each do |ref|
+        sig_element.xpath('//ds:Reference | //Reference', DS_NS).each do |ref|
           uri = ref.attribute('URI').value
 
           hashed_element = document.dup.at_xpath("//*[@ID='#{uri[1..-1]}']")
           # removing the Signature node and children to get digest
-          hashed_element.at_xpath('//*:Signature').remove
+          hashed_element.at_xpath('//ds:Signature | //Signature', DS_NS).remove
 
-          canon_algorithm = canon_algorithm(ref.at_xpath('//*:CanonicalizationMethod'))
+          canon_algorithm = canon_algorithm(
+            ref.at_xpath('//ds:CanonicalizationMethod | //CanonicalizationMethod', DS_NS)
+          )
 
           canon_hashed_element = hashed_element.canonicalize(
             canon_algorithm,
@@ -209,7 +211,9 @@ module SamlIdp
 
           hash = digest_algorithm.digest(canon_hashed_element)
 
-          digest_value = Base64.decode64(ref.at_xpath('//*:DigestValue').text)
+          digest_value = Base64.decode64(ref.at_xpath(
+            '//ds:DigestValue | //DigestValue', DS_NS
+          ).text)
 
           unless digests_match?(hash, digest_value)
             return soft ? false : (raise ValidationError.new(
@@ -218,18 +222,20 @@ module SamlIdp
           end
         end
 
-        base64_signature = sig_element.at_xpath('//*:SignatureValue').text
+        base64_signature = sig_element.at_xpath(
+          '//ds:SignatureValue | //SignatureValue', DS_NS
+        ).text
         signature = Base64.decode64(base64_signature)
 
-        sig_alg = sig_element.at_xpath('//*:SignatureMethod')
+        sig_alg = sig_element.at_xpath('//ds:SignatureMethod | //SignatureMethod', DS_NS)
 
         log '***** validate_doc_embedded_signature: verify_signature:'
         verify_signature(base64_cert, sig_alg, signature, canon_string, soft)
       end
 
       def digest_method_algorithm(ref, digest_method_fix_enabled)
-        digest_method = ref.at_xpath('//*:DigestMethod')
-        if digest_method_fix_enabled || digest_method.namespace.prefix.present?
+        digest_method = ref.at_xpath('//ds:DigestMethod | //DigestMethod', DS_NS)
+        if digest_method_fix_enabled || digest_method.namespace&.prefix.present?
           algorithm(digest_method)
         else
           algorithm(nil)
