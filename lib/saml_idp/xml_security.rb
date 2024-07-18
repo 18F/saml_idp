@@ -180,13 +180,13 @@ module SamlIdp
 
         sig_element = document.at_xpath('//*:Signature')
         sig_namespace_hash = sig_element.at_xpath('//*:SignedInfo')&.namespaces
-        noko_signed_info_element = sig_element.at_xpath('./*:SignedInfo')
+        signed_info_element = sig_element.at_xpath('./*:SignedInfo')
 
         canon_algorithm = canon_algorithm(
           sig_element.at_xpath('//*:CanonicalizationMethod')
         )
 
-        canon_string = noko_signed_info_element.canonicalize(canon_algorithm)
+        canon_string = signed_info_element.canonicalize(canon_algorithm)
         # check digests
         sig_element.xpath('//*:Reference').each do |ref|
           uri = ref.attribute('URI').value
@@ -251,13 +251,6 @@ module SamlIdp
 
       def digests_match?(hash, digest_value)
         hash == digest_value
-      end
-
-      def extract_signed_element_id
-        reference_element = document.at_xpath('//*:Signature/*:SignedInfo/*:Reference')
-        return if reference_element.nil?
-
-        @signed_element_id = reference_element.attribute('URI').value[1..-1]
       end
 
       def canon_algorithm(element)
