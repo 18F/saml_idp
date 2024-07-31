@@ -39,7 +39,7 @@ module SamlIdp
     end
 
     it 'includes the response_id in the signature' do
-      doc = Nokogiri.parse subject.signed
+      doc = Nokogiri.XML subject.signed
       signature = doc.at_xpath('//*:Signature')
       expect(signature.to_s).to include(response_id)
     end

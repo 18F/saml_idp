@@ -46,7 +46,7 @@ module SamlIdp
       attr_accessor :document
 
       def initialize(response)
-        @document = Nokogiri.parse(response)
+        @document = Nokogiri.XML(response)
       end
 
       def validate(idp_cert_fingerprint, soft = true, options = {})

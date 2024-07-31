@@ -91,7 +91,7 @@ describe SamlIdp::Controller do
     it 'signs a SAML Response if requested' do
       saml_response_encoded = encode_response(principal, signed_response_message: true)
       saml_response_text = Base64.decode64(saml_response_encoded)
-      saml_response = Nokogiri.parse(saml_response_text)
+      saml_response = Nokogiri.XML(saml_response_text)
       response_id = saml_response.at_xpath('//*:Response').attributes['ID'].value
       signature_ref = saml_response.at_xpath('//*:Reference').attributes['URI'].value[1..-1]
 
