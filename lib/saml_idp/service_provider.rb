@@ -14,8 +14,6 @@ module SamlIdp
 
     delegate :config, to: :SamlIdp
 
-    attr_reader :matching_cert
-
     def valid?
       attributes.present?
     end
