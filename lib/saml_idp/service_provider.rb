@@ -22,7 +22,7 @@ module SamlIdp
 
     def valid_signature?(matching_cert = nil, require_signature = false)
       if require_signature || should_validate_signature?
-        !!matching_cert
+        matching_cert.present?
       else
         true
       end
