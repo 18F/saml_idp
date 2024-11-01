@@ -1,11 +1,6 @@
 require 'saml_idp/logout_request_builder'
 
 module SamlRequestMacros
-  def make_saml_request(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
-    auth_url = url(saml_settings(requested_saml_acs_url))
-    CGI.unescape(auth_url.split('=').last)
-  end
-
   def custom_saml_request(overrides: {}, security_overrides: {}, signed: true)
     auth_url = url(
       custom_saml_settings(
@@ -25,12 +20,6 @@ module SamlRequestMacros
 
   def signed_auth_request
     CGI.unescape(url(signed_saml_settings).split('=').last)
-  end
-
-  def signed_auth_request_options
-    signed_auth_request_options ||=
-      uri = URI(url(signed_saml_settings(embed: false)))
-    Rack::Utils.parse_nested_query uri.query
   end
 
   def make_saml_logout_request(requested_saml_logout_url = 'https://foo.example.com/saml/logout')
@@ -76,9 +65,9 @@ module SamlRequestMacros
     Rack::Utils.parse_nested_query uri.query
   end
 
-  def saml_settings(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
+  def saml_settings
     settings = OneLogin::RubySaml::Settings.new
-    settings.assertion_consumer_service_url = requested_saml_acs_url
+    settings.assertion_consumer_service_url = 'https://foo.example.com/saml/consume'
     settings.issuer = 'http://example.com/issuer'
     settings.idp_sso_target_url = 'http://idp.com/saml/idp'
     settings.idp_slo_target_url = 'http://idp.com/saml/idp-slo'
@@ -96,7 +85,7 @@ module SamlRequestMacros
   end
 
   def signed_saml_settings(embed: true)
-    settings = saml_settings('https://foo.example.com/saml/consume').dup
+    settings = saml_settings.dup
 
     settings.security = {
       embed_sign: embed,
@@ -112,7 +101,7 @@ module SamlRequestMacros
     settings = saml_settings.dup
 
     overrides.keys.each do |key|
-      settings.send("#{key}=".to_sym, overrides[key])
+      settings.send(:"#{key}=", overrides[key])
     end
 
     if signed
@@ -125,7 +114,7 @@ module SamlRequestMacros
         signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
       }
       security_overrides.each do |key|
-        settings.security.send("#{key}=".to_sym, security_overrides[key])
+        settings.security.send(:"#{key}=", security_overrides[key])
       end
     end
 

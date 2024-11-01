@@ -12,10 +12,9 @@ describe SamlIdp::Controller do
   def head(status, options = {}); end
 
   it 'finds the SAML ACS URL' do
-    requested_saml_acs_url = 'https://example.com/saml/consume'
-    params[:SAMLRequest] = make_saml_request(requested_saml_acs_url)
+    params[:SAMLRequest] = custom_saml_request
     validate_saml_request
-    expect(saml_acs_url).to eq(requested_saml_acs_url)
+    expect(saml_acs_url).to eq(saml_settings.assertion_consumer_service_url)
   end
 
   context 'SP-initiated logout w/o embed' do
@@ -54,7 +53,7 @@ describe SamlIdp::Controller do
 
   context 'SAML Responses' do
     before do
-      params[:SAMLRequest] = make_saml_request
+      params[:SAMLRequest] = custom_saml_request
       validate_saml_request
     end
 
@@ -151,7 +150,7 @@ describe SamlIdp::Controller do
     end
 
     it 'returns headers only with a bad_request status' do
-      params[:SAMLRequest] = make_saml_request
+      params[:SAMLRequest] = custom_saml_request
 
       expect(self).to receive(:head).with(:bad_request)
 
