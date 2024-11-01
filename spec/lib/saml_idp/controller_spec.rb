@@ -33,16 +33,14 @@ describe SamlIdp::Controller do
     end
 
     it 'respects Logout Request' do
-      request_url = URI.parse(make_sp_logout_request)
-      params.merge!(Rack::Utils.parse_nested_query(request_url.query)).symbolize_keys!
+      params.merge!(custom_logout_request).symbolize_keys!
       decode_request(params[:SAMLRequest])
       expect(saml_request.logout_request?).to eq true
       expect(valid_saml_request?).to eq true
     end
 
     it 'requires Signature be present in params' do
-      request_url = URI.parse(make_sp_logout_request)
-      params.merge!(Rack::Utils.parse_nested_query(request_url.query)).symbolize_keys!
+      params.merge!(custom_logout_request).symbolize_keys!
       params.delete(:Signature)
       decode_request(params[:SAMLRequest])
 

@@ -33,14 +33,7 @@ module SamlRequestMacros
     request_builder.encoded
   end
 
-  def make_sp_logout_request(requested_saml_logout_url = 'https://foo.example.com/saml/logout')
-    settings = saml_settings.dup
-    settings.assertion_consumer_logout_service_url = requested_saml_logout_url
-    settings.name_identifier_value = 'some-user-id'
-    OneLogin::RubySaml::Logoutrequest.new.create(settings)
-  end
-
-  def custom_logout_request(overrides: {})
+  def custom_logout_request(overrides: {}, security_overrides: {})
     settings = saml_settings.dup
     settings.assertion_consumer_logout_service_url = 'https://foo.example.com/saml/logout'
     settings.name_identifier_value = 'some-user-id'
