@@ -383,6 +383,7 @@ module SamlIdp
 
           before do
             subject.service_provider.assertion_consumer_logout_service_url = ' https://example.com/logout'
+            subject.service_provider.certs = []
           end
 
           it 'is not valid' do

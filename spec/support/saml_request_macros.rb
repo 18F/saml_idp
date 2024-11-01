@@ -13,49 +13,64 @@ module SamlRequestMacros
     CGI.unescape(auth_url.split('=').last)
   end
 
+  def custom_logout_request(overrides: {}, security_overrides: {})
+    settings = custom_saml_settings(
+      overrides: overrides.merge(
+        {
+          assertion_consumer_logout_service_url: 'https://foo.example.com/saml/logout',
+          name_identifier_value: 'some-user-id'
+        }
+      ),
+      security_overrides: {
+        embed_sign: false,
+      },
+      signed: true
+    )
+
+    uri = URI(OneLogin::RubySaml::Logoutrequest.new.create(settings))
+    Rack::Utils.parse_nested_query uri.query
+  end
+
   def url(saml_settings)
     auth_request = OneLogin::RubySaml::Authrequest.new
     auth_request.create(saml_settings)
   end
 
-  def signed_auth_request
-    CGI.unescape(url(signed_saml_settings).split('=').last)
-  end
-
-  def make_saml_logout_request(requested_saml_logout_url = 'https://foo.example.com/saml/logout')
+  def make_saml_logout_request
     request_builder = SamlIdp::LogoutRequestBuilder.new(
       'some_response_id',
       'http://example.com',
-      requested_saml_logout_url,
+      'https://foo.example.com/saml/logout',
       'some_name_id',
       OpenSSL::Digest::SHA256
     )
     request_builder.encoded
   end
 
-  def custom_logout_request(overrides: {}, security_overrides: {})
+  def custom_saml_settings(overrides:, security_overrides:, signed:)
     settings = saml_settings.dup
-    settings.assertion_consumer_logout_service_url = 'https://foo.example.com/saml/logout'
-    settings.name_identifier_value = 'some-user-id'
 
-    settings.security = {
-      embed_sign: false,
-      logout_requests_signed: true,
-      want_assertions_signed: true,
-      digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
-      signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
-    }
-
-    security_overrides.each do |key|
-      settings.security.send(:"#{key}=", security_overrides[key])
-    end
-
-    overrides.keys.each do |key|
+    overrides.each_key do |key|
       settings.send(:"#{key}=", overrides[key])
     end
 
-    uri = URI(OneLogin::RubySaml::Logoutrequest.new.create(settings))
-    Rack::Utils.parse_nested_query uri.query
+    if signed
+      # set security options, then override any that need it
+      settings.security = {
+        embed_sign: true,
+        authn_requests_signed: true,
+        logout_requests_signed: true,
+        want_assertions_signed: true,
+        digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
+        signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+      }
+
+      security_overrides.each_key do |key|
+        settings.security[:"#{key}"] = security_overrides[key]
+      end
+    end
+
+    settings
   end
 
   def saml_settings
@@ -74,43 +89,6 @@ module SamlRequestMacros
       digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
       signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
     }
-    settings
-  end
-
-  def signed_saml_settings(embed: true)
-    settings = saml_settings.dup
-
-    settings.security = {
-      embed_sign: embed,
-      authn_requests_signed: true,
-      want_assertions_signed: true,
-      digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
-      signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
-    }
-    settings
-  end
-
-  def custom_saml_settings(overrides:, security_overrides:, signed:)
-    settings = saml_settings.dup
-
-    overrides.keys.each do |key|
-      settings.send(:"#{key}=", overrides[key])
-    end
-
-    if signed
-      # set security options, then override any that need it
-      settings.security = {
-        embed_sign: true,
-        authn_requests_signed: true,
-        want_assertions_signed: true,
-        digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
-        signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
-      }
-      security_overrides.each do |key|
-        settings.security.send(:"#{key}=", security_overrides[key])
-      end
-    end
-
     settings
   end
 end

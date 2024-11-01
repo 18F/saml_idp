@@ -134,9 +134,7 @@ module SamlIdp
 
         context 'document does have ds namespace for Signature elements' do
           let(:xml_string) do
-            SamlIdp::Request.from_deflated_request(
-              signed_auth_request
-            ).raw_xml
+            SamlIdp::Request.from_deflated_request(custom_saml_request).raw_xml
           end
 
           it 'returns the value in the DigestMethod node' do
