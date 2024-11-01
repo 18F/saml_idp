@@ -136,7 +136,7 @@ describe SamlIdp::Controller do
 
   context 'invalid SAML Request' do
     it 'returns headers only with a forbidden status' do
-      params[:SAMLRequest] = make_invalid_saml_request
+      params[:SAMLRequest] = custom_saml_request(overrides: {issuer: ''})
 
       expect(self).to receive(:head).with(:forbidden)
 

@@ -6,6 +6,18 @@ module SamlRequestMacros
     CGI.unescape(auth_url.split('=').last)
   end
 
+  def custom_saml_request(overrides: {}, security_overrides: {}, signed: true)
+    auth_url = url(
+      custom_saml_settings(
+        overrides:,
+        security_overrides:,
+        signed:
+      )
+    )
+
+    CGI.unescape(auth_url.split('=').last)
+  end
+
   def url(saml_settings)
     auth_request = OneLogin::RubySaml::Authrequest.new
     auth_request.create(saml_settings)
@@ -19,11 +31,6 @@ module SamlRequestMacros
     signed_auth_request_options ||=
       uri = URI(url(signed_saml_settings(embed: false)))
     Rack::Utils.parse_nested_query uri.query
-  end
-
-  def make_invalid_saml_request(values: {'issuer': ''}, signed: false)
-    auth_url = url(invalid_saml_settings(values:, signed:))
-    CGI.unescape(auth_url.split('=').last)
   end
 
   def make_saml_logout_request(requested_saml_logout_url = 'https://foo.example.com/saml/logout')
@@ -42,6 +49,31 @@ module SamlRequestMacros
     settings.assertion_consumer_logout_service_url = requested_saml_logout_url
     settings.name_identifier_value = 'some-user-id'
     OneLogin::RubySaml::Logoutrequest.new.create(settings)
+  end
+
+  def custom_logout_request(overrides: {})
+    settings = saml_settings.dup
+    settings.assertion_consumer_logout_service_url = 'https://foo.example.com/saml/logout'
+    settings.name_identifier_value = 'some-user-id'
+
+    settings.security = {
+      embed_sign: false,
+      logout_requests_signed: true,
+      want_assertions_signed: true,
+      digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
+      signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+    }
+
+    security_overrides.each do |key|
+      settings.security.send(:"#{key}=", security_overrides[key])
+    end
+
+    overrides.keys.each do |key|
+      settings.send(:"#{key}=", overrides[key])
+    end
+
+    uri = URI(OneLogin::RubySaml::Logoutrequest.new.create(settings))
+    Rack::Utils.parse_nested_query uri.query
   end
 
   def saml_settings(requested_saml_acs_url = 'https://foo.example.com/saml/consume')
@@ -64,7 +96,8 @@ module SamlRequestMacros
   end
 
   def signed_saml_settings(embed: true)
-    settings = saml_settings('https://foo.example.com/saml/consume')
+    settings = saml_settings('https://foo.example.com/saml/consume').dup
+
     settings.security = {
       embed_sign: embed,
       authn_requests_signed: true,
@@ -75,14 +108,15 @@ module SamlRequestMacros
     settings
   end
 
-  def invalid_saml_settings(values: {'issuer': ''}, signed: false)
+  def custom_saml_settings(overrides:, security_overrides:, signed:)
     settings = saml_settings.dup
 
-    values.keys.each do |key|
-      settings.send("#{key}=".to_sym, values[key])
+    overrides.keys.each do |key|
+      settings.send("#{key}=".to_sym, overrides[key])
     end
 
     if signed
+      # set security options, then override any that need it
       settings.security = {
         embed_sign: true,
         authn_requests_signed: true,
@@ -90,6 +124,9 @@ module SamlRequestMacros
         digest_method: 'http://www.w3.org/2001/04/xmlenc#sha256',
         signature_method: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
       }
+      security_overrides.each do |key|
+        settings.security.send("#{key}=".to_sym, security_overrides[key])
+      end
     end
 
     settings
