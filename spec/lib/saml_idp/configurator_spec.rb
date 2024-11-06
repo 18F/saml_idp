@@ -25,7 +25,7 @@ module SamlIdp
     end
 
     it 'has a valid algorithm' do
-      expect(subject.algorithm).to eq(:sha1)
+      expect(subject.algorithm).to eq(:sha256)
     end
 
     it 'has a valid reference_id_generator' do

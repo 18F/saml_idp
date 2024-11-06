@@ -78,7 +78,7 @@ module SamlIdp
             allow(cert_element).to receive(:text).and_return(wrong_cert)
           end
 
-          it 'raises invalid certificates when the document certificate is invalid' do
+          it 'raises invalid certificate' do
             expect { subject.validate('fingerprint', false) }.to(
               raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,
                           'Invalid certificate')
@@ -93,7 +93,7 @@ module SamlIdp
               and_return(nil)
           end
 
-          it 'raises validation error when the X509Certificate is missing' do
+          it 'raises validation error' do
             expect { subject.validate('fingerprint', false) }.to(
               raise_error(
                 SamlIdp::XMLSecurity::SignedDocument::ValidationError,
@@ -103,7 +103,7 @@ module SamlIdp
           end
         end
 
-        context 'when X509 element exists but is empty returns nil' do
+        context 'when X509 element exists but is empty ' do
           let(:cert_element) { double Nokogiri::XML::Element }
 
           before do
@@ -114,7 +114,7 @@ module SamlIdp
             allow(cert_element).to receive(:text).and_return('')
           end
 
-          it 'raises a validation error when find_base64_cert_text returns nil' do
+          it 'returns nil' do
             expect { subject.validate('a fingerprint', false) }.to(
               raise_error(
                 SamlIdp::XMLSecurity::SignedDocument::ValidationError,
@@ -167,40 +167,54 @@ module SamlIdp
           )
         end
 
-        context 'when SHA1' do
-          let(:signature_method) { 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha1' }
-          let(:digest_method) { 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha1' }
+        context 'when using SHA1 as a signing algorithm' do
+          let(:algorithm) { '1' }
 
-          it 'validate using SHA1' do
+          it 'raises an error' do
             fingerprint = OpenSSL::Digest::SHA1.new(base64_cert.to_der).hexdigest
-            expect(subject.validate(fingerprint)).to be_truthy
+            expect { subject.validate(fingerprint, false) }.to(
+              raise_error(
+                SamlIdp::XMLSecurity::SignedDocument::ValidationError,
+                'Signature Algorithm needs to be SHA256'
+              )
+            )
           end
         end
 
-        context 'when SHA256' do
+        context 'when using SHA256 as a signing algorithm' do
           let(:algorithm) { '256' }
 
           it 'validate using SHA256' do
             fingerprint = OpenSSL::Digest::SHA256.new(base64_cert.to_der).hexdigest
-            expect(subject.validate(fingerprint)).to be_truthy
+            expect(subject.validate(fingerprint)).to be true
           end
         end
 
-        context 'SHA384' do
+        context 'when using SHA384 as a signing algorithm' do
           let(:algorithm) { '384' }
 
-          it 'validate using SHA384' do
+          it 'raises an error' do
             fingerprint = OpenSSL::Digest::SHA384.new(base64_cert.to_der).hexdigest
-            expect(subject.validate(fingerprint)).to be_truthy
+            expect { subject.validate(fingerprint, false) }.to(
+              raise_error(
+                SamlIdp::XMLSecurity::SignedDocument::ValidationError,
+                'Signature Algorithm needs to be SHA256'
+              )
+            )
           end
         end
 
-        context 'SHA512' do
+        context 'when using SHA512 as a signing algorithm' do
           let(:algorithm) { '512' }
 
-          it 'validate using SHA512' do
+          it 'raises an error' do
             fingerprint = OpenSSL::Digest::SHA512.new(base64_cert.to_der).hexdigest
-            expect(subject.validate(fingerprint)).to be_truthy
+            expect { subject.validate(fingerprint, false) }.to(
+              raise_error(
+                SamlIdp::XMLSecurity::SignedDocument::ValidationError,
+                'Signature Algorithm needs to be SHA256'
+              )
+            )
           end
         end
       end
