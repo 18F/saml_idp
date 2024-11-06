@@ -27,4 +27,16 @@ module CertificateHelpers
   def invalid_cert
     OpenSSL::X509::Certificate.new(File.read('spec/support/certificates/too_short_cert.crt'))
   end
+
+  def begin_end_cert(cert)
+    "-----BEGIN CERTIFICATE-----\n" +
+      cert +
+    "\n-----END CERTIFICATE-----\n"
+  end
+
+  def xml_cert_text(cert)
+    cert.
+      gsub("-----BEGIN CERTIFICATE-----\n", '').
+      gsub("\n-----END CERTIFICATE-----\n", '')
+  end
 end

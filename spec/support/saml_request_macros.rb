@@ -15,15 +15,13 @@ module SamlRequestMacros
 
   def custom_logout_request(overrides: {}, security_overrides: {})
     settings = custom_saml_settings(
-      overrides: overrides.merge(
-        {
-          assertion_consumer_logout_service_url: 'https://foo.example.com/saml/logout',
-          name_identifier_value: 'some-user-id'
-        }
-      ),
+      overrides: {
+        assertion_consumer_logout_service_url: 'https://foo.example.com/saml/logout',
+        name_identifier_value: 'some-user-id',
+      }.merge(overrides),
       security_overrides: {
         embed_sign: false,
-      },
+      }.merge(security_overrides),
       signed: true
     )
 

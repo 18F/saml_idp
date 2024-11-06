@@ -32,7 +32,7 @@ module SamlIdp
         subject { described_class.from_deflated_request 'not saml' }
 
         it 'does not blow up' do
-           expect(subject.valid?).to eq(false)
+          expect(subject.valid?).to be false
         end
       end
     end

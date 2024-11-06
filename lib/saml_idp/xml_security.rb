@@ -176,7 +176,6 @@ module SamlIdp
         # check for inclusive namespaces
         inclusive_namespaces = extract_inclusive_namespaces
 
-
         sig_element = document.at_xpath('//ds:Signature | //Signature', DS_NS)
         signed_info_element = sig_element.at_xpath('./ds:SignedInfo | //SignedInfo', DS_NS)
 
