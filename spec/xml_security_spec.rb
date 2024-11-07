@@ -8,7 +8,7 @@ module SamlIdp
     let(:auth_request) { custom_saml_request }
     let(:request) { Request.from_deflated_request(auth_request) }
     let(:base64_cert_text) { saml_settings.certificate }
-    let(:base64_cert) { OpenSSL::X509::Certificate.new(begin_end_cert(saml_settings.certificate)) }
+    let(:base64_cert) { OpenSSL::X509::Certificate.new(add_cert_boundaries(saml_settings.certificate)) }
 
     subject do
       request.send(:document).signed_document
@@ -33,7 +33,7 @@ module SamlIdp
 
       describe 'when throwing errors' do
         context 'when when the certs do not match' do
-          let(:wrong_cert) { xml_cert_text(custom_idp_x509_cert) }
+          let(:wrong_cert) { remove_cert_boundaries(custom_idp_x509_cert) }
 
           it 'raises key validation error' do
             expect { subject.validate_doc(wrong_cert, false) }.to(
@@ -50,7 +50,7 @@ module SamlIdp
             allow(subject).to receive(:digests_match?).and_return false
           end
 
-          it 'raises digests error' do
+          it 'raises digest mismatch error' do
             expect { subject.validate_doc(base64_cert_text, false) }.to(
               raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,
                           'Digest mismatch')
@@ -78,7 +78,7 @@ module SamlIdp
             allow(cert_element).to receive(:text).and_return(wrong_cert)
           end
 
-          it 'raises invalid certificate' do
+          it 'raises invalid certificate error' do
             expect { subject.validate('fingerprint', false) }.to(
               raise_error(SamlIdp::XMLSecurity::SignedDocument::ValidationError,
                           'Invalid certificate')

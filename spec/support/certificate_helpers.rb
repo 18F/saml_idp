@@ -28,13 +28,15 @@ module CertificateHelpers
     OpenSSL::X509::Certificate.new(File.read('spec/support/certificates/too_short_cert.crt'))
   end
 
-  def begin_end_cert(cert)
-    "-----BEGIN CERTIFICATE-----\n" +
-      cert +
-    "\n-----END CERTIFICATE-----\n"
+  def add_cert_boundaries(cert_text)
+    <<~TEXT
+      -----BEGIN CERTIFICATE-----
+      #{cert_text}
+      -----END CERTIFICATE-----
+    TEXT
   end
 
-  def xml_cert_text(cert)
+  def remove_cert_boundaries(cert)
     cert.
       gsub("-----BEGIN CERTIFICATE-----\n", '').
       gsub("\n-----END CERTIFICATE-----\n", '')
