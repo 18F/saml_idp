@@ -236,7 +236,7 @@ module SamlIdp
         cert = OpenSSL::X509::Certificate.new(cert_text)
         signature_algorithm = algorithm(sig_alg)
 
-        if signature_algorithm != OpenSSL::Digest::SHA256
+        if signature_algorithm != SamlIdp.config.algorithm
           return false if soft
 
           raise ValidationError.new('Signature Algorithm needs to be SHA256',
