@@ -239,7 +239,7 @@ module SamlIdp
         if signature_algorithm != SamlIdp.config.algorithm
           return false if soft
 
-          raise ValidationError.new('Signature Algorithm needs to be SHA256',
+          raise ValidationError.new("Signature Algorithm needs to be #{SamlIdp.config.algorithm}",
                                                            :wrong_sig_algorithm)
         end
 
