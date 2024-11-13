@@ -239,8 +239,10 @@ module SamlIdp
         if signature_algorithm != SamlIdp.config.algorithm
           return false if soft
 
-          raise ValidationError.new("Signature Algorithm needs to be #{SamlIdp.config.algorithm}",
-                                                           :wrong_sig_algorithm)
+          raise ValidationError.new(
+            "Signature Algorithm needs to be #{SamlIdp.config.algorithm.new.name}",
+            :wrong_sig_algorithm
+          )
         end
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
