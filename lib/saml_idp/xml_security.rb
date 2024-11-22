@@ -93,6 +93,7 @@ module SamlIdp
         cert_element.text
       end
 
+      # @return [Array(OpenSSL::X509::Certificate, false), Array(nil, Error)] tuple of (cert, error)
       def valid_cert(cert_text)
         return OpenSSL::X509::Certificate.new(cert_text), false
       rescue OpenSSL::X509::CertificateError
