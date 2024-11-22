@@ -257,9 +257,9 @@ module SamlIdp
         cert = OpenSSL::X509::Certificate.new(cert_text)
         signature_algorithm = algorithm(sig_alg)
 
+        # remove if !soft when we are sure this wont break partners
         if !soft && signature_algorithm != SamlIdp.config.algorithm
-          # remove comment when we are sure this wont break partners
-          # return false if soft
+          return false if soft
 
           raise ValidationError.new(
             "Signature Algorithm needs to be #{SamlIdp.config.algorithm.new.name}",
