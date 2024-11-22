@@ -53,13 +53,13 @@ module SamlIdp
         log 'Validate the fingerprint'
         base64_cert = find_base64_cert(options)
         cert_text = Base64.decode64(base64_cert)
-      begin
-        cert = valid_cert(cert_text)
-      rescue OpenSSL::X509::CertificateError
-        return false if soft
 
-        raise ValidationError.new('Invalid certificate', :invalid_certificate_in_request)
-      end
+        cert, error = valid_cert(cert_text)
+        if error.present?
+          return false if soft
+
+          raise error
+        end
 
         # check cert matches registered idp cert
         fingerprint = fingerprint_cert(cert, options)
@@ -83,7 +83,7 @@ module SamlIdp
       end
 
       def request_cert
-        @request_cert ||= if cert_element.text.blank?
+        if cert_element.text.blank?
           raise ValidationError.new(
             'Certificate element present in response (ds:X509Certificate) but evaluating to nil',
             :no_certificate_in_request
@@ -94,7 +94,9 @@ module SamlIdp
       end
 
       def valid_cert(cert_text)
-        OpenSSL::X509::Certificate.new(cert_text)
+        return OpenSSL::X509::Certificate.new(cert_text), false
+      rescue OpenSSL::X509::CertificateError
+        return nil, ValidationError.new('Invalid certificate', :invalid_certificate_in_request)
       end
 
       def validate_doc(base64_cert, soft = true, options = {})
@@ -319,7 +321,7 @@ module SamlIdp
       end
 
       def cert_element
-        @cert_elementy || document.at_xpath('//ds:X509Certificate | //X509Certificate', DS_NS)
+        @cert_element ||= document.at_xpath('//ds:X509Certificate | //X509Certificate', DS_NS)
       end
 
       def log(msg, level: :debug)
