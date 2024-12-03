@@ -317,7 +317,7 @@ DEPENDENCIES
   simplecov (~> 0.22.0)
   sqlite3
   timecop
-  xmlenc (>= 0.7.1)
+  xmlenc (>= 0.8.0)
 
 BUNDLED WITH
    2.5.7
