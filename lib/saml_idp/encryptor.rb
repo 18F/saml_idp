@@ -3,6 +3,8 @@ module SamlIdp
   class Encryptor
     attr_accessor :encryption_key, :block_encryption, :key_transport, :cert
 
+    # Encryption algorithms enumerated in:
+    # https://github.com/digidentity/xmlenc/blob/937ca2f/lib/xmlenc/encrypted_data.rb#L3-L10
     ENCRYPTION_ALGORITHMS_NS = {
       'aes128-cbc' => 'http://www.w3.org/2001/04/xmlenc#aes128-cbc',
       'aes256-cbc' => 'http://www.w3.org/2001/04/xmlenc#aes256-cbc',
@@ -42,16 +44,8 @@ module SamlIdp
     end
     private :openssl_cert
 
-    # Encryption algorithms enumerated in:
-    # https://github.com/digidentity/xmlenc/blob/937ca2f/lib/xmlenc/encrypted_data.rb#L3-L10
     def block_encryption_ns
-      ns = ENCRYPTION_ALGORITHMS_NS[block_encryption]
-      return ns if !ns.nil?
-
-      raise ValidationError.new(
-        "Invalid encryption algorithm #{block_encryption}",
-        :invalid_encryption_algorithm
-      )
+      ENCRYPTION_ALGORITHMS_NS[block_encryption]
     end
     private :block_encryption_ns
 

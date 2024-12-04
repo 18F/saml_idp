@@ -113,7 +113,6 @@ describe SamlIdp::Controller do
       SamlIdp::Encryptor::ENCRYPTION_ALGORITHMS_NS.keys.each do |encryption_algorithm|
         it "encrypts SAML Response assertion using #{encryption_algorithm}" do
           self.algorithm = algorithm_name
-          puts encryption_algorithm
           encryption_opts = {
             cert: SamlIdp::Default::X509_CERTIFICATE,
             block_encryption: encryption_algorithm,
