@@ -3,6 +3,14 @@ module SamlIdp
   class Encryptor
     attr_accessor :encryption_key, :block_encryption, :key_transport, :cert
 
+    ENCRYPTION_ALGORITHMS_NS = {
+      'aes128-cbc' => 'http://www.w3.org/2001/04/xmlenc#aes128-cbc',
+      'aes256-cbc' => 'http://www.w3.org/2001/04/xmlenc#aes256-cbc',
+      'aes128-gcm' => 'http://www.w3.org/2009/xmlenc11#aes128-gcm',
+      'aes192-gcm' => 'http://www.w3.org/2009/xmlenc11#aes192-gcm',
+      'aes256-gcm' => 'http://www.w3.org/2009/xmlenc11#aes256-gcm',
+    }
+
     def initialize(opts)
       self.block_encryption = opts[:block_encryption]
       self.key_transport = opts[:key_transport]
@@ -37,22 +45,13 @@ module SamlIdp
     # Encryption algorithms enumerated in:
     # https://github.com/digidentity/xmlenc/blob/937ca2f/lib/xmlenc/encrypted_data.rb#L3-L10
     def block_encryption_ns
-      case block_encryption
-      when 'tripledes-cbc'
-        'http://www.w3.org/2001/04/xmlenc#tripledes-cbc'
-      when 'aes128-cbc'
-        'http://www.w3.org/2001/04/xmlenc#aes128-cbc'
-      when 'aes256-cbc'
-        'http://www.w3.org/2001/04/xmlenc#aes256-cbc'
-      when 'aes128-gcm'
-        'http://www.w3.org/2009/xmlenc11#aes128-gcm'
-      when 'aes192-gcm'
-        'http://www.w3.org/2009/xmlenc11#aes192-gcm'
-      when 'aes256-gcm'
-        'http://www.w3.org/2009/xmlenc11#aes256-gcm'
-      else
-        "http://www.w3.org/2009/xmlenc11##{block_encryption}"
-      end
+      ns = ENCRYPTION_ALGORITHMS_NS[block_encryption]
+      return ns if !ns.nil?
+
+      raise ValidationError.new(
+        "Invalid encryption algorithm #{block_encryption}",
+        :invalid_encryption_algorithm
+      )
     end
     private :block_encryption_ns
 
