@@ -180,11 +180,11 @@ module SamlIdp
             '//ds:DigestValue | //DigestValue', DS_NS
           ).text)
 
-          unless digests_match?(hash, digest_value)
-            return soft ? false : (raise ValidationError.new(
-              'Digest mismatch', :digest_mismatch
-            ))
-          end
+          next if digests_match?(hash, digest_value)
+
+          return false if soft
+
+          raise ValidationError.new('Digest mismatch', :digest_mismatch)
         end
 
         base64_signature = sig_element.at_xpath(
@@ -217,8 +217,9 @@ module SamlIdp
         end
 
         unless cert.public_key.verify(signature_algorithm.new, signature, canon_string)
-          return soft ? false : (raise ValidationError.new('Key validation error',
-                                                           :key_validation_error))
+          return false if soft
+
+          raise ValidationError.new('Key validation error', :key_validation_error)
         end
 
         true
