@@ -89,7 +89,7 @@ module Saml
       def gather_errors(cert, options = {})
         signed_document.validate(cert, options, soft: false)
       rescue SamlIdp::XMLSecurity::SignedDocument::ValidationError => e
-        { cert: options[:cert].serial.to_s, error_code: e.error_code }
+        { cert: cert.serial.to_s, error_code: e.error_code }
       end
 
       def valid_sig_with_sha256?(cert, options = {})

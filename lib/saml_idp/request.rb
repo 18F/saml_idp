@@ -150,7 +150,7 @@ module SamlIdp
       return nil unless signed?
 
       Array(service_provider.certs).find do |cert|
-        document.valid_signature?(cert, options.merge(cert:))
+        document.valid_signature?(cert, options)
       end
     end
 
@@ -166,7 +166,7 @@ module SamlIdp
       return [{ cert: nil, error_code: :no_registered_certs }] if service_provider.certs.blank?
 
       Array(service_provider.certs).map do |cert|
-        document.gather_errors(cert, options.merge(cert:))
+        document.gather_errors(cert, options)
       end
     end
 
