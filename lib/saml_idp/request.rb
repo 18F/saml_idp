@@ -137,7 +137,7 @@ module SamlIdp
         errors.push(:no_response_url)
       end
 
-      unless service_provider? && valid_signature?
+      if service_provider? && !valid_signature?
         log "Signature is invalid in #{raw_xml}"
         # TODO: We should get more specific errors
         errors.push(:invalid_signature)

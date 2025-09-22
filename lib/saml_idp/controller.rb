@@ -21,13 +21,11 @@ module SamlIdp
 
       decode_request(raw_saml_request)
 
-      unless valid_saml_request?
-        render json: { errors: saml_request.errors }, status: :bad_request
-      end
+      valid_saml_request?
     rescue Nokogiri::XML::SyntaxError => e
       log 'Nokogiri::XML::SyntaxError validating request'
       log e
-      render json: { errors: ["Invalid XML syntax: #{e}"] }, status: :bad_request
+      head :bad_request
     end
 
     def decode_request(raw_saml_request)
