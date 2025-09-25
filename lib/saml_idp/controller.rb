@@ -21,7 +21,7 @@ module SamlIdp
 
       decode_request(raw_saml_request)
 
-      head :forbidden unless valid_saml_request?
+      valid_saml_request?
     rescue Nokogiri::XML::SyntaxError => e
       log 'Nokogiri::XML::SyntaxError validating request'
       log e

@@ -286,10 +286,10 @@ module SamlIdp
             expect(subject.valid?).to eq(false)
           end
 
-          it 'adds an error to the request object' do
+          it 'adds a single error to the request object' do
             subject.valid?
 
-            expect(subject.errors.first).to eq :issuer_missing_or_invald
+            expect(subject.errors).to eq [:issuer_missing_or_invalid]
           end
         end
 

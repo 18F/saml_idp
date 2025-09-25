@@ -119,7 +119,7 @@ module SamlIdp
 
       unless service_provider?
         log "Unable to find service provider for issuer #{issuer}"
-        errors.push(:issuer_missing_or_invald)
+        errors.push(:issuer_missing_or_invalid)
       end
 
       if authn_request? && logout_request?
@@ -137,7 +137,7 @@ module SamlIdp
         errors.push(:no_response_url)
       end
 
-      unless service_provider? && valid_signature?
+      if service_provider? && !valid_signature?
         log "Signature is invalid in #{raw_xml}"
         # TODO: We should get more specific errors
         errors.push(:invalid_signature)
