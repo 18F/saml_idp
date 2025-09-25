@@ -14,7 +14,7 @@ SAML IDP implementation.
 
 # For Login.gov maintainers
 
-When making a change to this gem, please remember to update the version number in `lib/saml_idp/version.rb`, and then run `bundle`. Once the version and Gemfile.lock changes have been committed and merged, run `script/release` from the `main` branch to create and push a new tag. Then, update the tag for the `saml_idp` gem in the `Gemfile` of the `idp` repo.
+When making a change to this gem, please remember to update the version number in `lib/saml_idp/version.rb`, and then run `bundle`. Once the version and Gemfile.lock changes have been committed and merged, run `script/release <version>` from the `main` branch to create and push a new tag. Then, update the tag for the `saml_idp` gem in the `Gemfile` of the `identity-idp` repo.
 
 # Installation and Usage
 
