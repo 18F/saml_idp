@@ -10,6 +10,7 @@ To tag a new release:
 EOF
 }
 
+# If no argument is provided to the script, print the usage instructions
 if [ $# -eq 0 ]; then
   print_help >&2
   exit 1
@@ -17,16 +18,20 @@ fi
 
 tag_name=""
 
+# If there is an argument, do the following depending on the argument
 while [ $# -gt 0 ]; do
   case "$1" in
+  # If the user ran "script/release --help" or "script/release -h", print the usage instructions
   -h | --help )
     print_help
     exit 0
     ;;
+  # If the user ran "script/release -t" or any other flag except -h, print an error
   -* )
     printf "unrecognized flag: %s\n" "$1" >&2
     exit 1
     ;;
+  # Otherwise, set the tag_name name variable to the argument
   * )
     tag_name="$1"
     shift 1
