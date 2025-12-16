@@ -2,7 +2,6 @@ require 'spec_helper'
 module SamlIdp
   describe Request do
     let(:ial) { 'http://idmanagement.gov/ns/assurance/ial/2' }
-    let(:vtr) { 'C1.C2.P1.Pb' }
     let(:authn_context_classref) { 'urn:oasis:names:tc:SAML:2.0:ac:classes:Password' }
     let(:issuer) { 'localhost:3000' }
     let(:local_overrides) { {} }
@@ -210,60 +209,6 @@ module SamlIdp
 
       it 'returns logout_url for response_url' do
         expect(subject.response_url).to eq(subject.logout_url)
-      end
-    end
-
-    describe '#requested_vtr_authn_contexts' do
-      subject { described_class.from_deflated_request encoded_request }
-
-      context 'no vtr context requested' do
-        let(:authn_context_classref) { '' }
-
-        it 'returns an empty array' do
-          expect(subject.requested_vtr_authn_contexts).to eq([])
-        end
-      end
-
-      context 'only vtr is requested' do
-        let(:authn_context_classref) { vtr }
-
-        it 'returns the vrt' do
-          expect(subject.requested_vtr_authn_contexts).to eq([vtr])
-        end
-      end
-
-      context 'multiple contexts including vtr and an old ACR context' do
-        let(:authn_context_classref) { [vtr, ial] }
-
-        it 'returns the vrt' do
-          expect(subject.requested_vtr_authn_contexts).to eq([vtr])
-        end
-      end
-
-      context 'multiple contexts that are vectors of trust' do
-        let(:authn_context_classref) { [vtr, 'C1.C2.P1'] }
-
-        it 'returns all of the vectors in an array' do
-          expect(subject.requested_vtr_authn_contexts).to eq([vtr, 'C1.C2.P1'])
-        end
-      end
-
-      context 'context that contains a VTR substring but is not a VTR' do
-        let(:authn_context_classref) do
-          'Not a VTR but does contain LetT3.Rs and Nu.Mb.Ers'
-        end
-
-        it 'does not match on the context' do
-          expect(subject.requested_vtr_authn_contexts).to eq([])
-        end
-      end
-
-      context 'with the default MFA context' do
-        let(:authn_context_classref) { 'urn:gov:gsa:ac:classes:sp:PasswordProtectedTransport:duo' }
-
-        it 'does not match on the context' do
-          expect(subject.requested_vtr_authn_contexts).to eq([])
-        end
       end
     end
 
