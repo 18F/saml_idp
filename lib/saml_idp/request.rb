@@ -2,8 +2,6 @@ require 'saml_idp/xml_security'
 require 'saml_idp/service_provider'
 module SamlIdp
   class Request
-    VTR_REGEXP = /\A[A-Z][a-z0-9](\.[A-Z][a-z0-9])*\z/
-
     def self.from_deflated_request(raw, options = {})
       if raw
         log "#{'~' * 20} RAW Request #{'~' * 20}\n#{raw}\n#{'~' * 18} Done RAW Request #{'~' * 17}\n"
@@ -80,12 +78,6 @@ module SamlIdp
         authn_context_nodes.map(&:content)
       else
         []
-      end
-    end
-
-    def requested_vtr_authn_contexts
-      requested_authn_contexts.select do |classref|
-        VTR_REGEXP.match?(classref)
       end
     end
 
