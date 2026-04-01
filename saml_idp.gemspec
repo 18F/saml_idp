@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.rdoc_options = ['--charset=UTF-8']
 
-  s.required_ruby_version = '>= 3.1.0'
+  s.required_ruby_version = '>= 3.3.0'
 
   s.add_dependency('activesupport')
   s.add_dependency('builder')
@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency('capybara', '~> 3.40')
   s.add_development_dependency('listen')
   s.add_development_dependency 'pry-byebug'
-  s.add_development_dependency('rails', '~> 7.1')
+  s.add_development_dependency('rails', '~> 8.0')
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rubocop', '1.62.0'
