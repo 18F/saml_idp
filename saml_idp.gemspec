@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_dependency('activesupport', '~> 7.2.3')
   s.add_dependency('builder')
   s.add_dependency('faraday')
-  s.add_dependency('nokogiri', '>= 1.10.2')
+  s.add_dependency('nokogiri', '>= 1.19.4')
   s.add_dependency('pkcs11')
   s.add_dependency('ostruct')
 
