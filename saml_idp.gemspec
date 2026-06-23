@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 3.3.4'
 
-  s.add_dependency('activesupport')
+  s.add_dependency('activesupport', '>= 7.2.3')
   s.add_dependency('builder')
   s.add_dependency('faraday', '>= 2.14.1')
   s.add_dependency('nokogiri', '>= 1.19.4')
