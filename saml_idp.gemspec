@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.rdoc_options = ['--charset=UTF-8']
 
-  s.required_ruby_version = '>= 3.1.0'
+  s.required_ruby_version = '>= 3.3.4'
 
   s.add_dependency('activesupport', '~> 7.2.3')
   s.add_dependency('builder')
