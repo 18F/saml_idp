@@ -30,6 +30,7 @@ Gem::Specification.new do |s|
   s.add_dependency('pkcs11')
   s.add_dependency('ostruct')
 
+  s.add_development_dependency('bundler-audit', '~> 0.9.3')
   s.add_development_dependency('capybara', '~> 3.40')
   s.add_development_dependency('listen')
   s.add_development_dependency 'pry-byebug'
