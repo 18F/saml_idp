@@ -4,7 +4,7 @@ PATH
     saml_idp (0.24.0.pre.18f)
       activesupport (~> 7.2.3)
       builder
-      faraday
+      faraday (>= 2.14.1)
       nokogiri (>= 1.19.4)
       ostruct
       pkcs11
@@ -115,8 +115,10 @@ GEM
     docile (1.4.0)
     drb (2.2.1)
     erubi (1.13.1)
-    faraday (2.9.0)
-      faraday-net_http (>= 2.0, < 3.2)
+    faraday (2.14.3)
+      faraday-net_http (>= 2.0, < 3.5)
+      json
+      logger
     faraday-net_http (3.1.0)
       net-http
     ffi (1.16.3)
