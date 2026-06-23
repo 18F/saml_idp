@@ -21,15 +21,16 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.rdoc_options = ['--charset=UTF-8']
 
-  s.required_ruby_version = '>= 3.1.0'
+  s.required_ruby_version = '>= 3.3.4'
 
-  s.add_dependency('activesupport')
+  s.add_dependency('activesupport', '~> 7.2.3')
   s.add_dependency('builder')
-  s.add_dependency('faraday')
-  s.add_dependency('nokogiri', '>= 1.10.2')
+  s.add_dependency('faraday', '>= 2.14.1')
+  s.add_dependency('nokogiri', '>= 1.19.4')
   s.add_dependency('pkcs11')
   s.add_dependency('ostruct')
 
+  s.add_development_dependency('bundler-audit', '~> 0.9.3')
   s.add_development_dependency('capybara', '~> 3.40')
   s.add_development_dependency('listen')
   s.add_development_dependency 'pry-byebug'
