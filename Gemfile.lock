@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    saml_idp (0.24.1.pre.18f)
-      activesupport (~> 7.2.3)
+    saml_idp (0.24.2.pre.18f)
+      activesupport
       builder
       faraday (>= 2.14.1)
       nokogiri (>= 1.19.4)
