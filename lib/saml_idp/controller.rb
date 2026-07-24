@@ -47,6 +47,7 @@ module SamlIdp
       encryption_opts = opts[:encryption] || nil
       signature_opts = opts[:signature] || {}
       response_name_id_format = opts[:name_id_format] || saml_request.name_id_format
+      authn_instant = opts[:authn_instant] || Time.zone.now
 
       response = SamlResponse.new(
         reference_id,
@@ -59,6 +60,7 @@ module SamlIdp
         (opts[:algorithm] || algorithm || default_algorithm),
         my_authn_context_classref,
         response_name_id_format,
+        authn_instant,
         signature_opts[:x509_certificate],
         signature_opts[:secret_key],
         expiry,
@@ -82,7 +84,7 @@ module SamlIdp
         saml_request_id,
         (opts[:algorithm] || algorithm || default_algorithm),
         signature_opts[:x509_certificate],
-        signature_opts[:secret_key],
+        signature_opts[:secret_key]
       ).raw
     end
 

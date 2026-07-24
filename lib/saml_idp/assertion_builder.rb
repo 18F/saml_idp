@@ -7,7 +7,8 @@ module SamlIdp
     include Signable
     attr_accessor :reference_id
     attr_accessor :issuer_uri, :principal, :audience_uri, :saml_request_id, :saml_acs_url,
-                  :raw_algorithm, :authn_context_classref, :name_id_format, :expiry, :encryption_opts
+                  :raw_algorithm, :authn_context_classref, :name_id_format, :expiry,
+                  :encryption_opts, :authn_instant
 
     delegate :config, to: :SamlIdp
 
@@ -24,6 +25,7 @@ module SamlIdp
       name_id_format,
       x509_certificate,
       secret_key,
+      authn_instant,
       expiry = 60 * 60,
       encryption_opts = nil
     )
@@ -37,6 +39,7 @@ module SamlIdp
       self.raw_algorithm = raw_algorithm
       self.authn_context_classref = authn_context_classref
       self.name_id_format = name_id_format
+      self.authn_instant = authn_instant
       self.x509_certificate = x509_certificate
       self.secret_key = secret_key
       self.expiry = expiry
@@ -80,7 +83,7 @@ module SamlIdp
             end
           end
         end
-        assertion.AuthnStatement AuthnInstant: now_iso,
+        assertion.AuthnStatement AuthnInstant: iso { authn_instant.utc },
                                  SessionIndex: reference_string do |statement|
           statement.AuthnContext do |context|
             case authn_context_classref
