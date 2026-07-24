@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    saml_idp (0.24.2.pre.18f)
+    saml_idp (0.25.2.pre.18f)
       activesupport (>= 7.2.3)
       builder
       faraday (>= 2.14.1)
