@@ -4,7 +4,7 @@ module SamlIdp
   class SamlResponse
     attr_accessor :assertion_with_signature, :reference_id, :response_id, :issuer_uri, :principal,
                   :audience_uri, :saml_request_id, :saml_acs_url, :algorithm,
-                  :authn_context_classref, :name_id_format, :x509_certificate, :secret_key,
+                  :authn_context_classref, :name_id_format, :authn_instant, :x509_certificate, :secret_key,
                   :expiry, :encryption_opts
 
     # rubocop:disable Metrics/ParameterLists
@@ -19,6 +19,7 @@ module SamlIdp
       algorithm,
       authn_context_classref,
       name_id_format,
+      authn_instant,
       x509_certificate = nil,
       secret_key = nil,
       expiry = 60 * 60,
@@ -34,6 +35,7 @@ module SamlIdp
       self.saml_acs_url = saml_acs_url
       self.algorithm = algorithm
       self.secret_key = secret_key
+      self.authn_instant = authn_instant
       self.x509_certificate = x509_certificate
       self.authn_context_classref = authn_context_classref
       self.name_id_format = name_id_format
@@ -42,7 +44,7 @@ module SamlIdp
     end
 
     def build
-      @built ||= response_builder.encoded
+      @build ||= response_builder.encoded
     end
 
     def signed
@@ -67,7 +69,7 @@ module SamlIdp
         signed_assertion,
         algorithm,
         x509_certificate,
-        secret_key,
+        secret_key
       )
     end
     private :response_builder
@@ -85,6 +87,7 @@ module SamlIdp
         name_id_format,
         x509_certificate,
         secret_key,
+        authn_instant,
         expiry,
         encryption_opts
       )

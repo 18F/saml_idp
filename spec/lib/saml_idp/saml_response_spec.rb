@@ -24,6 +24,8 @@ module SamlIdp
         key_transport: 'rsa-oaep-mgf1p',
       }
     end
+    let(:authn_instant) { Time.zone.now }
+
     let(:subject_encrypted) do
       described_class.new(reference_id,
                           response_id,
@@ -35,6 +37,7 @@ module SamlIdp
                           algorithm,
                           authn_context_classref,
                           name_id_format,
+                          authn_instant,
                           nil,
                           nil,
                           expiry,
@@ -52,6 +55,7 @@ module SamlIdp
                           algorithm,
                           authn_context_classref,
                           name_id_format,
+                          authn_instant,
                           nil,
                           nil,
                           expiry)
@@ -102,6 +106,7 @@ module SamlIdp
                             algorithm,
                             authn_context_classref,
                             name_id_format,
+                            authn_instant,
                             custom_idp_x509_cert,
                             custom_idp_secret_key,
                             expiry,

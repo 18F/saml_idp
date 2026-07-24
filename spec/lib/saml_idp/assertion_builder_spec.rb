@@ -20,6 +20,7 @@ module SamlIdp
         key_transport: 'rsa-oaep-mgf1p',
       }
     end
+    let(:authn_instant) { Time.zone.now }
 
     subject do
       described_class.new(
@@ -34,6 +35,7 @@ module SamlIdp
         name_id_format,
         nil,
         nil,
+        authn_instant,
         expiry
       )
     end
@@ -77,10 +79,15 @@ module SamlIdp
           name_id_format,
           nil,
           nil,
+          authn_instant,
           expiry
         )
+        # expected_authn_instant =
         Timecop.travel(Time.zone.local(2010, 6, 1, 13, 0, 0)) do
-          expect(builder.raw).to eq('<Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="_abc" IssueInstant="2010-06-01T13:00:00Z" Version="2.0"><Issuer>http://sportngin.com</Issuer><Subject><NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">foo@example.com</NameID><SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer"><SubjectConfirmationData InResponseTo="123" NotOnOrAfter="2010-06-01T13:03:00Z" Recipient="http://saml.acs.url"></SubjectConfirmationData></SubjectConfirmation></Subject><Conditions NotBefore="2010-06-01T12:59:55Z" NotOnOrAfter="2010-06-01T16:00:00Z"><AudienceRestriction><Audience>http://example.com</Audience></AudienceRestriction></Conditions><AttributeStatement><Attribute Name="emailAddress" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="emailAddress"><AttributeValue>foo@example.com</AttributeValue></Attribute></AttributeStatement><AuthnStatement AuthnInstant="2010-06-01T13:00:00Z" SessionIndex="_abc"><AuthnContext><AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</AuthnContextClassRef></AuthnContext></AuthnStatement></Assertion>')
+          raw = '<Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="_abc" IssueInstant="2010-06-01T13:00:00Z" Version="2.0"><Issuer>http://sportngin.com</Issuer><Subject><NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">foo@example.com</NameID><SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer"><SubjectConfirmationData InResponseTo="123" NotOnOrAfter="2010-06-01T13:03:00Z" Recipient="http://saml.acs.url"></SubjectConfirmationData></SubjectConfirmation></Subject><Conditions NotBefore="2010-06-01T12:59:55Z" NotOnOrAfter="2010-06-01T16:00:00Z"><AudienceRestriction><Audience>http://example.com</Audience></AudienceRestriction></Conditions><AttributeStatement><Attribute Name="emailAddress" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="emailAddress"><AttributeValue>foo@example.com</AttributeValue></Attribute></AttributeStatement><AuthnStatement AuthnInstant="'
+          raw += authn_instant.iso8601
+          raw += '" SessionIndex="_abc"><AuthnContext><AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</AuthnContextClassRef></AuthnContext></AuthnStatement></Assertion>'
+          expect(builder.raw).to eq(raw)
         end
       end
     end
@@ -98,6 +105,7 @@ module SamlIdp
         name_id_format,
         nil,
         nil,
+        authn_instant,
         expiry,
         encryption_opts
       )
